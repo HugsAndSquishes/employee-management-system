@@ -4,8 +4,6 @@ This class handles the configuration and initialization of database connections
 package com.group02.config;
 
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
