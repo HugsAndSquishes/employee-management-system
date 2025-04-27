@@ -12,6 +12,8 @@ public class App {
 
     public static void main(String[] args) {
         try {
+            DatabaseConfig.loadProperties("config.properties");
+            DatabaseConfig.initializeDatabaseSchema();
             System.out.println("Initializing database connection...");
             DatabaseConfig.initializeConnectionPool();
             System.out.println("Database connection established successfully.");

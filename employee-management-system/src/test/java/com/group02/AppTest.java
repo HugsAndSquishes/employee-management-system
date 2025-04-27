@@ -21,7 +21,6 @@ import java.sql.Statement;
  * Unit test for simple App.
  */
 public class AppTest {
-    // TODO: seperate actual database from test database?
     /**
      * Rigorous Test :-)
      */

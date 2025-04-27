@@ -1,5 +1,5 @@
 # Maven build directory
-/target/
+/employee-management-system/target/
 *.class
 
 # IDE specific files
