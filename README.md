@@ -10,10 +10,14 @@ I want to note that I use Optional<T> alot to avoid null errors
    - src/test/resources/config.properties
 
 2. In the terminal, type
+   ```bash
    mvn clean install
+   ```
 
-3. Run the following file normally (Right click and select Run Java):
-   employee-management-system/src/main/java/com/group02/App.java
+3. To run the app, type
+   ```bash
+   mvn clean compile exec:java
+   ```
 
 Useful Commands:
 
