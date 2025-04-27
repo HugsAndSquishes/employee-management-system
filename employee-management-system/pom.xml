@@ -33,6 +33,24 @@
       <version>5.0.1</version>
     </dependency>
 
+
+    <!-- Flyway: automates database creation and manages the database through 
+          migration scripts (employee-management-system/src/main/resources/db/migration) -->
+
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>9.21.1</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-mysql</artifactId>
+        <version>9.21.1</version>
+    </dependency>
+
+    
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -42,8 +60,36 @@
   </dependencies>
 
   <build>
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
+    <resources>
+        <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+        </resource>
+    </resources>
+
+    <!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
+    <pluginManagement>
       <plugins>
+      <!-- Plugin to load properties from config.properties -->
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>properties-maven-plugin</artifactId>
+            <version>1.0.0</version>
+            <executions>
+                <execution>
+                    <phase>initialize</phase> <!-- Load during the build initialization phase -->
+                    <goals>
+                        <goal>load</goal>
+                    </goals>
+                    <configuration>
+                        <files>
+                            <file>src/main/resources/config.properties</file> <!-- Path to your properties file -->
+                        </files>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+
         <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
@@ -83,7 +129,28 @@
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.0.0</version>
         </plugin>
+
+         <!-- Flyway Maven Plugin -->
+        <plugin>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-maven-plugin</artifactId>
+            <version>9.21.1</version>
+            <configuration>
+                <url>jdbc:mysql://localhost:3306/employee_database</url>
+                <user>root</user>
+                <password>adminadmin</password>
+                <schemas>
+                    <schema>employee_database</schema>
+                </schemas>
+                <locations>
+                    <location>classpath:db/migration</location>
+                </locations>
+                <baselineOnMigrate>true</baselineOnMigrate>
+                <cleanDisabled>false</cleanDisabled>
+            </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
 </project>
+

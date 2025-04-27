@@ -13,16 +13,34 @@ import com.group02.model.Employee;
 import com.group02.util.DatabaseUtil;
 //import com.group02.model.Employee;
 
-public class EmployeeRepository {
+/*
+CREATE TABLE IF NOT EXISTS employees (
+    empID INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    employeeName VARCHAR(255),
+    --first_name VARCHAR(100) NOT NULL,
+    --last_name VARCHAR(100) NOT NULL,
+    SSN VARCHAR(9) NOT NULL UNIQUE, -- No two rows can have the same SSN calue
+    jobTitle VARCHAR(255),
+    division VARCHAR(255),
+    salary DECIMAL(10,2),
+    payInfo VARCHAR(255)
+);
+ */
 
-    public int save(Employee employee) {
-        String sql = "INSERT INTO employees (name, department) VALUES (?, ?)";
+public class EmployeeManager {
+
+    public int add(Employee employee) {
+        String sql = "INSERT INTO employees (employeeName, division, SSN, jobTitle, salary, payInfo) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setString(1, employee.getName());
-            // stmt.setString(2, employee.getEmail());
+            stmt.setString(2, employee.getDivision());
+            stmt.setString(3, employee.getSSN());
+            stmt.setString(4, employee.getJobTitle());
+            stmt.setDouble(5, employee.getSalary());
+            stmt.setString(6, employee.getInfo());
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows == 0) {
@@ -45,7 +63,7 @@ public class EmployeeRepository {
         }
     }
 
-    public Optional<Employee> findById(int empID) {
+    public Optional<Employee> search(int empID) {
         String sql = "SELECT * FROM employees WHERE empID = ?";
 
         try (Connection conn = DatabaseUtil.getConnection();
@@ -57,7 +75,7 @@ public class EmployeeRepository {
                 if (rs.next()) {
                     Employee employee = new Employee();
                     employee.setEmpID(rs.getInt("empID"));
-                    employee.setName(rs.getString("name"));
+                    employee.setName(rs.getString("employeeName"));
                     // employee.setEmail(rs.getString("email"));
                     return Optional.of(employee);
                 }
@@ -81,7 +99,7 @@ public class EmployeeRepository {
             while (rs.next()) {
                 Employee employee = new Employee();
                 employee.setEmpID(rs.getInt("empID"));
-                employee.setName(rs.getString("name"));
+                employee.setName(rs.getString("employeeName"));
                 // employee.setEmail(rs.getString("email"));
                 employees.add(employee);
             }
@@ -91,6 +109,11 @@ public class EmployeeRepository {
         }
 
         return employees;
+    }
+
+    // Update entry ()
+    public void update(int empID) {
+
     }
 
     // Additional methods like update, delete, etc.

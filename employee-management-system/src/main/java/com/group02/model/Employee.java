@@ -2,7 +2,7 @@ package com.group02.model;
 
 public class Employee {
     private int empID;
-    private String name;
+    private String employeeName;
     private String SSN;
     private String jobTitle;
     private String division;
@@ -12,8 +12,8 @@ public class Employee {
     public Employee() {
     }
 
-    public Employee(String name, String SSN, String jobTitle, String division, double salary, String payInfo) {
-        this.name = name;
+    public Employee(String employeeName, String SSN, String jobTitle, String division, double salary, String payInfo) {
+        this.employeeName = employeeName;
         this.SSN = SSN;
         this.jobTitle = jobTitle;
         this.division = division;
@@ -21,12 +21,33 @@ public class Employee {
         this.payInfo = payInfo;
     }
 
-    public Employee(int empID, String name, String SSN) {
+    public Employee(int empID, String employeeName, String SSN) {
         this.empID = empID;
-        this.name = name;
+        this.employeeName = employeeName;
         this.SSN = SSN;
     }
 
+    public String getInfo() {
+        // TODO: Finish this function
+        return "Placeholder";
+    }
+
+    public void raiseSalary(double percentage) {
+        // Input should be actual percentage values (ex: 25) not decimals (ex: 0.25)
+    }
+
+    @Override
+    public String toString() {
+        return "Employee ID: " + empID + "\n" +
+                "Employee Name: " + employeeName + "\n" +
+                "SSN: " + SSN + "\n" +
+                "Job Title: " + jobTitle + "\n" +
+                "Division: " + division + "\n" +
+                "Salary: " + salary + "\n" +
+                "Pay Info: " + payInfo;
+    }
+
+    // Getters and Setters
     public int getEmpID() {
         return empID;
     }
@@ -36,11 +57,11 @@ public class Employee {
     }
 
     public String getName() {
-        return name;
+        return employeeName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setName(String employeeName) {
+        this.employeeName = employeeName;
     }
 
     public String getSSN() {
@@ -81,10 +102,5 @@ public class Employee {
 
     public void setPayInfo(String payInfo) {
         this.payInfo = payInfo;
-    }
-
-    @Override
-    public String toString() {
-        return "Employee{id=" + name + ", Title='" + jobTitle + "', Division='" + division + "'}";
     }
 }

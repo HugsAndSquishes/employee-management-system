@@ -1,2 +1,20 @@
 # employee-management-system
-Final project for software development
+
+This project uses MAVEN to organize dependencies. It uses Flyway to manage database organization
+
+1. First, you might have to adjust the url, user, and password values in the following files:
+
+   - config.properties
+   - employee-management-system/pom.xml (lines 139-141)
+
+2. In the terminal, type
+   mvn clean install
+
+3. Run the following file normally (Right click and select Run Java):
+   employee-management-system/src/main/java/com/group02/App.java
+
+Useful Commands:
+
+mvn flyway:clean
+This deletes all tables, data, and the schema history Flyway tracks. It will only wipe the database
+configured in config.properties.
