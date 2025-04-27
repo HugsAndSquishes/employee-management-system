@@ -28,7 +28,7 @@ public class Employee {
     }
 
     public String getInfo() {
-        // TODO: Finish this function
+        // TODO: Finish getInfo() function
         return "Placeholder";
     }
 

@@ -2,95 +2,150 @@ package com.group02;
 
 import com.group02.model.Employee;
 import com.group02.repository.EmployeeManager;
-
 import com.group02.config.DatabaseConfig;
-import com.group02.util.DatabaseUtil;
 
-import java.sql.Connection;
-import java.sql.Statement;
+import java.util.Scanner;
 
 public class App {
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final EmployeeManager employeeManager = new EmployeeManager();
+
     public static void main(String[] args) {
-        System.out.println("Initializing application...");
-        initializeDatabase();
-
         try {
-            // Add the rest of the app here
-
-            /*
-             * EmployeeManager employeeManager = new EmployeeManager();
-             * Employee newEmployee = new Employee("johndoe", "123456789", "Engineer",
-             * "5th", 2000, "FullTime");
-             */
-
-            insertTestData();
-
+            System.out.println("Initializing database connection...");
+            DatabaseConfig.initializeConnectionPool();
+            System.out.println("Database connection established successfully.");
         } catch (Exception e) {
+            System.err.println("Failed to initialize database connection: " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            // Close connection pool when app terminates
-            DatabaseConfig.closeDataSource();
+            System.exit(1); // Exit if we can't connect to the database
+        }
+
+        boolean running = true;
+
+        System.out.println("==== Employee Management System ====");
+        while (running) {
+            displayMenu();
+            int choice = getIntInput("Enter your choice: ");
+
+            switch (choice) {
+                case 1:
+                    addEmployee();
+                    break;
+                case 2:
+                    // viewAllEmployees();
+                    break;
+                case 3:
+                    // searchEmployee();
+                    break;
+                case 4:
+                    // updateEmployee();
+                    break;
+                case 5:
+                    // deleteEmployee();
+                    break;
+                case 0:
+                    running = false;
+                    System.out.println("Exiting the application. Goodbye!");
+                    DatabaseConfig.closeDataSource();
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+            System.out.println();
         }
     }
 
-    private static void insertTestData() {
-        EmployeeManager employeeManager = new EmployeeManager();
-        String[][] testData = {
-                { "John Doe", "123456789", "Engineer", "5th", "2000", "FullTime" },
-                { "Jane Smith", "987654321", "Manager", "HR", "3000", "FullTime" },
-                { "Michael Brown", "112233445", "Technician", "IT", "1500", "PartTime" },
-                { "Alice White", "556677889", "Accountant", "Finance", "2500", "FullTime" },
-                { "Bob Green", "667788990", "HR Specialist", "HR", "1800", "FullTime" },
-                { "Charlie Black", "998877665", "Developer", "IT", "2200", "Contract" },
-                { "David Blue", "112244668", "Designer", "Marketing", "2100", "FullTime" },
-                { "Eve Grey", "223344556", "Product Manager", "Product", "2800", "FullTime" },
-                { "Frank Yellow", "334455667", "Engineer", "R&D", "2600", "FullTime" },
-                { "Grace Red", "445566778", "Intern", "HR", "800", "Intern" }
-        };
+    private static void displayMenu() {
+        System.out.println("\n=== Main Menu ===");
+        System.out.println("1. Add New Employee");
+        System.out.println("2. View All Employees");
+        System.out.println("3. Search Employees");
+        System.out.println("4. Update Employee");
+        System.out.println("5. Delete Employee");
+        System.out.println("0. Exit");
+    }
 
-        for (String[] data : testData) {
-            String name = data[0];
-            String ssn = data[1];
-            String jobTitle = data[2];
-            String division = data[3];
-            double salary = Double.parseDouble(data[4]); // Convert salary from String to double
-            String employmentType = data[5];
+    private static void addEmployee() {
+        System.out.println("\n=== Add New Employee ===");
 
-            // Create and add employee to the list
-            Employee newEmployee = new Employee(name, ssn, jobTitle, division, salary, employmentType);
-            int empID = employeeManager.add(newEmployee);
+        Employee employee = new Employee();
 
-            System.out.println("Created user with ID: " + empID);
+        employee.setName(getStringInput("Enter employee name: "));
+        employee.setSSN(getStringInput("Enter SSN (9 digits): "));
+        employee.setJobTitle(getStringInput("Enter job title: "));
+        employee.setDivision(getStringInput("Enter division: "));
+        employee.setSalary(getDoubleInput("Enter salary: "));
+        employee.setPayInfo(getStringInput("Enter payment info: "));
+
+        int empID = employeeManager.addEmployee(employee);
+
+        if (empID > 0) {
+            System.out.println("Employee added successfully with ID: " + empID);
+        } else {
+            System.out.println("Failed to add employee. Please try again.");
         }
-
-        // Retrieve and display all users
-        System.out.println("All users:");
-        employeeManager.findAll().forEach(System.out::println);
     }
 
-    private static void initializeDatabase() {
-        // Run Flyway migrations
-        DatabaseConfig.initializeDatabaseSchema();
-        // initialize connection pool
-        DatabaseConfig.initializeConnectionPool();
-
-        /*
-         * // Create tables if they don't exist
-         * String createTableSQL = "CREATE TABLE IF NOT EXISTS users (" +
-         * "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
-         * "username VARCHAR(255) NOT NULL UNIQUE," +
-         * "email VARCHAR(255) NOT NULL UNIQUE" +
-         * ")";
-         * 
-         * try (Connection conn = DatabaseUtil.getConnection();
-         * Statement stmt = conn.createStatement()) {
-         * 
-         * stmt.execute(createTableSQL);
-         * System.out.println("Database schema initialized.");
-         * 
-         * } catch (Exception e) {
-         * e.printStackTrace();
-         * }
-         */
+    private static String getStringInput(String prompt) {
+        System.out.print(prompt);
+        return scanner.nextLine().trim();
     }
+
+    private static int getIntInput(String prompt) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                int input = Integer.parseInt(scanner.nextLine().trim());
+                return input;
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid integer.");
+            }
+        }
+    }
+
+    private static double getDoubleInput(String prompt) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                double input = Double.parseDouble(scanner.nextLine().trim());
+                return input;
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid number.");
+            }
+        }
+    }
+
+    /*
+     * public static void main(String[] args) {
+     * System.out.println("Initializing application...");
+     * boolean running = true;
+     * initializeDatabase();
+     * 
+     * //
+     * 
+     * try {
+     * // Add the rest of the app here
+     * 
+     * /*
+     * EmployeeManager employeeManager = new EmployeeManager();
+     * Employee newEmployee = new Employee("johndoe", "123456789", "Engineer",
+     * "5th", 2000, "FullTime");
+     * 
+     * 
+     * } catch (Exception e) {
+     * e.printStackTrace();
+     * } finally {
+     * // Close connection pool when app terminates
+     * DatabaseConfig.closeDataSource();
+     * }
+     * }
+     * 
+     * private static void initializeDatabase() {
+     * // Run Flyway migrations
+     * DatabaseConfig.initializeDatabaseSchema();
+     * // initialize connection pool
+     * DatabaseConfig.initializeConnectionPool();
+     * }
+     */
 }

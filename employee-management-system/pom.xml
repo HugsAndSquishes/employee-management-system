@@ -59,6 +59,8 @@
     </dependency>
   </dependencies>
 
+
+
   <build>
     <resources>
         <resource>
@@ -71,19 +73,43 @@
     <pluginManagement>
       <plugins>
       <!-- Plugin to load properties from config.properties -->
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <version>3.3.1</version>
+            <executions>
+                <execution>
+                    <id>copy-resources</id>
+                    <phase>process-resources</phase>
+                    <goals>
+                        <goal>copy-resources</goal>
+                    </goals>
+                    <configuration>
+                        <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                        <resources>
+                            <resource>
+                                <directory>src/main/resources</directory>
+                                <filtering>true</filtering>
+                            </resource>
+                        </resources>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+
         <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>properties-maven-plugin</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
             <executions>
                 <execution>
-                    <phase>initialize</phase> <!-- Load during the build initialization phase -->
+                    <phase>initialize</phase>
                     <goals>
-                        <goal>load</goal>
+                        <goal>read-project-properties</goal>
                     </goals>
                     <configuration>
                         <files>
-                            <file>src/main/resources/config.properties</file> <!-- Path to your properties file -->
+                            <file>src/main/resources/application-${env}.properties</file>
                         </files>
                     </configuration>
                 </execution>
@@ -132,25 +158,34 @@
 
          <!-- Flyway Maven Plugin -->
         <plugin>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-maven-plugin</artifactId>
-            <version>9.21.1</version>
-            <configuration>
-                <url>jdbc:mysql://localhost:3306/employee_database</url>
-                <user>root</user>
-                <password>adminadmin</password>
-                <schemas>
-                    <schema>employee_database</schema>
-                </schemas>
-                <locations>
-                    <location>classpath:db/migration</location>
-                </locations>
-                <baselineOnMigrate>true</baselineOnMigrate>
-                <cleanDisabled>false</cleanDisabled>
-            </configuration>
-        </plugin>
+          <groupId>org.flywaydb</groupId>
+          <artifactId>flyway-maven-plugin</artifactId>
+          <version>9.21.1</version>
+          <dependencies>
+              <dependency>
+                  <groupId>org.flywaydb</groupId>
+                  <artifactId>flyway-mysql</artifactId>
+                  <version>9.21.1</version>
+              </dependency>
+          </dependencies>
+          <configuration>
+              <url>${db.url}</url>
+              <user>${db.user}</user>
+              <password>${db.password}</password>
+              <schemas>
+                  <schema>${db.schema}</schema>
+              </schemas>
+              <locations>
+                  <location>classpath:db/migration</location>
+              </locations>
+              <baselineOnMigrate>true</baselineOnMigrate>
+              <cleanDisabled>false</cleanDisabled>
+          </configuration>
+      </plugin>
       </plugins>
     </pluginManagement>
   </build>
 </project>
+
+
 

@@ -3,9 +3,8 @@
 This file creates the database if it does not already exist.
 */
 
-CREATE DATABASE IF NOT EXISTS employee_database; -- TODO: database name should come from config.properties
-USE employee_database;
-USE employee_database;
+CREATE DATABASE IF NOT EXISTS ${database_name}; -- TODO: database name should come from config.properties
+USE ${database_name};
 
 CREATE TABLE IF NOT EXISTS employees (
     empID INT NOT NULL PRIMARY KEY AUTO_INCREMENT,

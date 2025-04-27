@@ -12,8 +12,6 @@ import java.sql.SQLException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import com.group02.config.DatabaseConfig;
-
 public class DatabaseUtil {
 
     /**
