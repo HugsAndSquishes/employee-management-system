@@ -1,48 +1,37 @@
 package com.group02.repository;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.sql.SQLException;
 import com.group02.model.Employee;
 import com.group02.util.DatabaseUtil;
 
-/*
-What the database table looks like:
-
-CREATE TABLE IF NOT EXISTS employees (
-    empID INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-    employeeName VARCHAR(255),
-    SSN VARCHAR(9) NOT NULL UNIQUE, -- No two rows can have the same SSN value
-    jobTitle VARCHAR(255),
-    division VARCHAR(255),
-    salary DECIMAL(10,2),
-    payInfo VARCHAR(255)
-);
+/**
+ * Manages CRUD operations on 'employees' table.
+ * <p>
+ * Implements Searchable for read queries and Updatable for single-column
+ * updates.
+ * Uses DatabaseUtil to obtain JDBC connections.
+ * </p>
  */
-
-public class EmployeeManager implements Searchable {
+public class EmployeeManager implements Searchable, Updatable {
 
     /**
-     * Adds a new employee to the database
-     * 
-     * @param employee The employee object to be stored
-     * @return The newly created empID of the employee or -1 if failure.
-     * @throws SQLException if database access error occurs.
-     * @throws SQLException if you try to add an employee with an existing SSN
+     * Inserts a new Employee into the DB.
+     * Uses RETURN_GENERATED_KEYS to fetch the auto-increment empID.
+     *
+     * @param employee DTO with fields (name, division, SSN, jobTitle, salary,
+     *                 payInfo)
+     * @return generated empID (>0) or -1 on failure
      */
-
     public int addEmployee(Employee employee) {
-        String sql = "INSERT INTO employees (employeeName, division, SSN, jobTitle, salary, payInfo) VALUES (?, ?, ?, ?, ?, ?)";
-
+        String sql = "INSERT INTO employees (employeeName, division, SSN, jobTitle, salary, payInfo) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
+            // bind parameters in the same order as the INSERT columns
             stmt.setString(1, employee.getName());
             stmt.setString(2, employee.getDivision());
             stmt.setString(3, employee.getSSN());
@@ -52,49 +41,46 @@ public class EmployeeManager implements Searchable {
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows == 0) {
+                // no insert happened
                 throw new SQLException("Creating employee failed, no rows affected.");
             }
 
-            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    int empID = generatedKeys.getInt(1);
+            // retrieve the generated key
+            try (ResultSet keys = stmt.getGeneratedKeys()) {
+                if (keys.next()) {
+                    int empID = keys.getInt(1);
                     employee.setEmpID(empID);
                     return empID;
                 } else {
                     throw new SQLException("Creating employee failed, no ID obtained.");
                 }
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace(); // consider replacing with a logger
             return -1;
         }
     }
 
     /**
-     * Helper function that a maps a ResultSet (table row) to a new Employee object
+     * Maps current ResultSet row to an Employee object.
      * 
-     * @param rs ResultSet to map
-     * @return Employee object with data from the ResultSet
-     * @throws SQLException if database access error occurs
+     * @param rs positioned at a valid row
+     * @return populated Employee instance
+     * @throws SQLException on column access errors
      */
     private Employee mapResultSetToEmployee(ResultSet rs) throws SQLException {
-        Employee employee = new Employee();
-        employee.setEmpID(rs.getInt("empID"));
-        employee.setName(rs.getString("employeeName"));
-        employee.setSSN(rs.getString("SSN"));
-        employee.setJobTitle(rs.getString("jobTitle"));
-        employee.setDivision(rs.getString("division"));
-        employee.setSalary(rs.getDouble("salary"));
-        employee.setPayInfo(rs.getString("payInfo"));
-        return employee;
+        Employee e = new Employee();
+        e.setEmpID(rs.getInt("empID"));
+        e.setName(rs.getString("employeeName"));
+        e.setSSN(rs.getString("SSN"));
+        e.setJobTitle(rs.getString("jobTitle"));
+        e.setDivision(rs.getString("division"));
+        e.setSalary(rs.getDouble("salary"));
+        e.setPayInfo(rs.getString("payInfo"));
+        return e;
     }
 
-    /**
-     * Retrieve all employees from the database
-     * 
-     * @return List of all employees
-     */
+    /** {@inheritDoc} */
     public List<Employee> findAll() {
         List<Employee> employees = new ArrayList<>();
         String sql = "SELECT * FROM employees";
@@ -103,142 +89,77 @@ public class EmployeeManager implements Searchable {
                 ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Employee employee = mapResultSetToEmployee(rs);
-                employees.add(employee);
+                employees.add(mapResultSetToEmployee(rs));
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return employees;
     }
 
-    // #region Search Functions
-
-    // TODO: add a general search function as shown in the class diagram
-    /**
-     * {@inheritDoc}
-     */
-    @Override
+    /** {@inheritDoc} */
     public Optional<Employee> searchByID(int empID) {
         String sql = "SELECT * FROM employees WHERE empID = ?";
-
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, empID);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    Employee employee = mapResultSetToEmployee(rs);
-                    // Returns the employee object
-                    return Optional.of(employee);
+                    return Optional.of(mapResultSetToEmployee(rs));
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        // Returns empty optional instead of null
         return Optional.empty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
+    /** {@inheritDoc} */
     public Optional<Employee> searchBySSN(String SSN) {
         String sql = "SELECT * FROM employees WHERE SSN = ?";
-
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, SSN);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    Employee employee = mapResultSetToEmployee(rs);
-                    // Returns the employee object
-                    return Optional.of(employee);
+                    return Optional.of(mapResultSetToEmployee(rs));
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        // Returns empty optional instead of null
         return Optional.empty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public List<Employee> searchByName(String employeeName) {
+    /** {@inheritDoc} */
+    public List<Employee> searchByName(String namePattern) {
         String sql = "SELECT * FROM employees WHERE employeeName REGEXP ?";
         List<Employee> employees = new ArrayList<>();
-
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, employeeName);
-
+            stmt.setString(1, namePattern);
             try (ResultSet rs = stmt.executeQuery()) {
-                // Note that this uses a while loop instead of the usual if statement because
-                // this function returns a list
                 while (rs.next()) {
-                    Employee employee = mapResultSetToEmployee(rs);
-                    employees.add(employee);
+                    employees.add(mapResultSetToEmployee(rs));
                 }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        // Return a list of employees
         return employees;
     }
 
-    /*
-     * public List<Employee> findByDivision(String division) {
-     * String sql = "SELECT * FROM employees WHERE division REGEXP ?";
-     * List<Employee> employees = new ArrayList<>();
-     * 
-     * try (Connection conn = DatabaseUtil.getConnection();
-     * PreparedStatement stmt = conn.prepareStatement(sql)) {
-     * 
-     * stmt.setString(1, division);
-     * 
-     * try (ResultSet rs = stmt.executeQuery()) {
-     * // Note that this uses a while loop instead of the usual if statement because
-     * // this function returns a list
-     * while (rs.next()) {
-     * Employee employee = mapResultSetToEmployee(rs);
-     * employees.add(employee);
-     * }
-     * }
-     * } catch (Exception e) {
-     * e.printStackTrace();
-     * }
-     * 
-     * // Return a list of employees
-     * return employees;
-     * }
-     * 
-     */
-    // #endregion
-
-    // #region Update Functions
-
     /**
-     * Update all fields in an existing employee record
+     * Updates all fields on an existing employee record.
      * 
-     * @param employee The employee object with updated values. The database will
-     *                 get its new values frmo this
-     * @return true if update successful, false otherwise
+     * @param employee DTO with empID and new field values
+     * @return true if update affected ≥1 row
      */
     public boolean updateEmployee(Employee employee) {
-        String sql = "UPDATE employees SET employeeName = ?, division = ?, SSN = ?, " +
-                "jobTitle = ?, salary = ?, payInfo = ? WHERE empID = ?";
+        String sql = "UPDATE employees SET employeeName=?, division=?, SSN=?, jobTitle=?, salary=?, payInfo=? WHERE empID=?";
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -250,68 +171,75 @@ public class EmployeeManager implements Searchable {
             stmt.setString(6, employee.getPayInfo());
             stmt.setInt(7, employee.getEmpID());
 
-            int affectedRows = stmt.executeUpdate();
-            return affectedRows > 0;
-        } catch (Exception e) {
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    /**
-     * Updates a single field an existing employee record
-     * 
-     * @param empID      The employee ID
-     * @param fieldName  The name of the field to update
-     * @param fieldValue The new value for the field
-     * @return true if update successful, false otherwise
-     */
+    /** {@inheritDoc} */
     public boolean updateField(int empID, String fieldName, Object fieldValue) {
-        List<String> validFields = List.of(
-                "employeeName", "division", "SSN", "jobTitle", "salary", "payInfo");
-
-        // Validate field name
+        // Validate allowed columns
+        List<String> validFields = List.of("employeeName", "division", "SSN", "jobTitle", "salary", "payInfo");
         if (!validFields.contains(fieldName)) {
-            throw new IllegalArgumentException("Invalid field name: " + fieldName);
+            throw new IllegalArgumentException("Invalid field: " + fieldName);
         }
-
         String sql = "UPDATE employees SET " + fieldName + " = ? WHERE empID = ?";
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            // Check the fieldValues's class for the parameter type
-            if (fieldValue instanceof String) {
+            // bind based on runtime type
+            if (fieldValue instanceof String)
                 stmt.setString(1, (String) fieldValue);
-            } else if (fieldValue instanceof Integer) {
+            else if (fieldValue instanceof Integer)
                 stmt.setInt(1, (Integer) fieldValue);
-            } else if (fieldValue instanceof Double) {
+            else if (fieldValue instanceof Double)
                 stmt.setDouble(1, (Double) fieldValue);
-            } else if (fieldValue instanceof Boolean) {
+            else if (fieldValue instanceof Boolean)
                 stmt.setBoolean(1, (Boolean) fieldValue);
-            } else if (fieldValue == null) {
-                stmt.setNull(1, java.sql.Types.NULL);
-            } else {
-                // Default to string representation
+            else if (fieldValue == null)
+                stmt.setNull(1, Types.NULL);
+            else
                 stmt.setString(1, fieldValue.toString());
-            }
 
             stmt.setInt(2, empID);
-
-            int affectedRows = stmt.executeUpdate();
-            return affectedRows > 0;
-        } catch (Exception e) {
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    // #endregion
+    /**
+     * Applies a percentage raise to all employees whose salary is between min and
+     * max.
+     * Uses SQL BETWEEN (inclusive) for range filtering.
+     *
+     * @param min  lower bound (inclusive)
+     * @param max  upper bound (inclusive)
+     * @param rate raise percentage (e.g. 5.0 for +5%)
+     */
+    public void applySalaryRaise(double min, double max, double rate) {
+        String sql = "UPDATE employees SET salary = salary * (1 + ?/100) WHERE salary BETWEEN ? AND ?";
+        try (Connection conn = DatabaseUtil.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDouble(1, rate);
+            stmt.setDouble(2, min);
+            stmt.setDouble(3, max);
+            int updated = stmt.executeUpdate();
+            System.out.println("Applied raise to " + updated + " employees.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
-     * Delete an employee by their ID
+     * Deletes an employee by empID.
      * 
-     * @param empID The employee ID to delete
-     * @return true if deletion was successful, false otherwise
+     * @param empID primary key
+     * @return true if at least one row was deleted
      */
     public boolean deleteEmployee(int empID) {
         String sql = "DELETE FROM employees WHERE empID = ?";
@@ -319,16 +247,56 @@ public class EmployeeManager implements Searchable {
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, empID);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
-            int affectedRows = stmt.executeUpdate();
-            return affectedRows > 0;
+    /**
+     * Adds a new column to the employees table
+     * 
+     * @param columnName   The name of the new column
+     * @param columnType   The SQL data type for the column
+     * @param defaultValue The default value for the column (can be null)
+     * @return true if the column was added successfully, false otherwise
+     */
+    public boolean addColumnToTable(String columnName, String columnType, Object defaultValue) {
+        StringBuilder sqlBuilder = new StringBuilder("ALTER TABLE employees ADD COLUMN ");
+        sqlBuilder.append(columnName).append(" ").append(columnType);
+
+        // Add default value if provided
+        if (defaultValue != null) {
+            sqlBuilder.append(" DEFAULT ?");
+        }
+
+        try (Connection conn = DatabaseUtil.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sqlBuilder.toString())) {
+
+            // Set default value if provided
+            if (defaultValue != null) {
+                // Handle different data types for the default value
+                if (defaultValue instanceof String) {
+                    stmt.setString(1, (String) defaultValue);
+                } else if (defaultValue instanceof Integer) {
+                    stmt.setInt(1, (Integer) defaultValue);
+                } else if (defaultValue instanceof Double) {
+                    stmt.setDouble(1, (Double) defaultValue);
+                } else if (defaultValue instanceof Boolean) {
+                    stmt.setBoolean(1, (Boolean) defaultValue);
+                } else {
+                    // Default to string representation
+                    stmt.setString(1, defaultValue.toString());
+                }
+            }
+
+            stmt.executeUpdate();
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    public void applySalaryRaise(double min, double max, double rate) {
-        // TODO: Finish applySalaryRaise() function
-    }
 }

@@ -3,6 +3,7 @@ package com.group02.ui;
 
 import com.group02.model.Employee;
 import com.group02.service.EmployeeService;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -31,6 +32,7 @@ public class ConsoleUI {
                 case 4 -> update();
                 case 5 -> delete();
                 case 6 -> bulkRaise();
+                case 7 -> addDatabaseColumn();
                 case 0 -> running = false;
                 default -> System.out.println("Invalid option. Please try again.");
             }
@@ -41,11 +43,11 @@ public class ConsoleUI {
 
     private void displayMenu() {
         System.out.println("\n╔══════════ Employee Manager ══════════╗");
-        System.out.println("║ 1) Add        2) View All           ║");
-        System.out.println("║ 3) Search     4) Update             ║");
-        System.out.println("║ 5) Delete     6) Bulk Raise         ║");
-        System.out.println("║ 0) Exit                            ║");
-        System.out.println("╚══════════════════════════════════════╝");
+        System.out.println("║ 1) Add        2) View All              ║");
+        System.out.println("║ 3) Search     4) Update                ║");
+        System.out.println("║ 5) Delete     6) Bulk Raise            ║");
+        System.out.println("║ 0) Exit       7) Add field             ║");
+        System.out.println("╚════════════════════════════════════════╝");
     }
 
     private void add() {
@@ -59,6 +61,15 @@ public class ConsoleUI {
         e.setPayInfo(getString("Pay Info: "));
         int id = service.add(e);
         System.out.println(id > 0 ? "Added, ID=" + id : "Add failed.");
+    }
+
+    private void addDatabaseColumn() {
+        System.out.println("\n-- Add Column--");
+        String columnName = getString("Column Name: ");
+        String dataType = getString("Datatype: ");
+
+        Boolean success = service.addColumnToTable(columnName, dataType, null);
+        System.out.println(success ? "Added, Column=" + columnName : "Add failed.");
     }
 
     private void viewAll() {

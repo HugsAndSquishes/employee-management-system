@@ -20,4 +20,6 @@ public interface EmployeeService {
     Optional<Employee> searchBySSN(String ssn);
 
     void applySalaryRaise(double minSalary, double maxSalary, double raisePercent);
+
+    Boolean addColumnToTable(String columnName, String columnType, Object defaultValue);
 }

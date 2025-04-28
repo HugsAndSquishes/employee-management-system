@@ -103,4 +103,13 @@ public class EmployeeServiceImpl implements EmployeeService {
             }
         }
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public Boolean addColumnToTable(String columnName, String columnType, Object defaultValue) {
+        dao.addColumnToTable(columnName, columnType, defaultValue);
+
+        // Add field to employee Object
+        return true;
+    }
 }
