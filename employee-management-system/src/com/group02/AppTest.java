@@ -32,16 +32,12 @@ public class AppTest {
     @BeforeClass
     public static void setUp() {
         // Reset any previous config
-        DatabaseConfig.resetConfiguration();
 
         // Load test configuration
-        DatabaseConfig.loadProperties("test-config.properties");
+        DatabaseConfig.loadProperties("test_config.properties");
 
         // Initialize test database schema
-        DatabaseConfig.initializeDatabaseSchema();
-
-        // Initialize connection pool with test database
-        DatabaseConfig.initializeConnectionPool();
+        DatabaseConfig.initializeDatabase();
 
         // Clear all data for clean tests
         cleanTestDatabase();
@@ -58,7 +54,7 @@ public class AppTest {
 
     @AfterClass
     public static void tearDown() {
-        DatabaseConfig.closeDataSource();
+        DatabaseConfig.closeConnection();
     }
 
     private EmployeeManager employeeManager = new EmployeeManager();
@@ -129,4 +125,5 @@ public class AppTest {
                 .anyMatch(e -> e.getEmpID() == empID);
         assertFalse(stillExists);
     }
+
 }
