@@ -1,9 +1,11 @@
+// src/main/java/com/group02/App.java
 package com.group02;
 
 import com.group02.config.DatabaseConfig;
-import com.group02.service.EmployeeService;
-import com.group02.service.EmployeeServiceImpl;
+import javafx.application.Application;
+import com.group02.ui.EmployeeApp;
 import com.group02.ui.ConsoleUI;
+import com.group02.service.EmployeeServiceImpl;
 
 public class App {
     public static void main(String[] args) {
@@ -16,8 +18,11 @@ public class App {
             System.exit(1);
         }
 
-        EmployeeService service = new EmployeeServiceImpl();
-        new ConsoleUI(service).run();
+        // To use the Console Interface:
+        new ConsoleUI(new EmployeeServiceImpl()).run();
+
+        // To use the JavaFX GUI:
+        // Application.launch(EmployeeApp.class, args);
 
         DatabaseConfig.closeDataSource();
     }

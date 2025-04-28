@@ -9,18 +9,16 @@ import java.util.Scanner;
 
 /**
  * Text-based UI for the Employee Management System.
- * Presents a simple menu loop for CRUD + bulk raise operations.
+ * Presents a menu loop for CRUD + bulk raise, with improved formatting.
  */
 public class ConsoleUI {
     private final Scanner scanner = new Scanner(System.in);
     private final EmployeeService service;
 
-    /** @param service injected service implementation */
     public ConsoleUI(EmployeeService service) {
         this.service = service;
     }
 
-    /** Main loop: display menu, read choice, dispatch action. */
     public void run() {
         boolean running = true;
         while (running) {
@@ -34,25 +32,22 @@ public class ConsoleUI {
                 case 5 -> delete();
                 case 6 -> bulkRaise();
                 case 0 -> running = false;
-                default -> System.out.println("Invalid option.");
+                default -> System.out.println("Invalid option. Please try again.");
             }
             System.out.println();
         }
+        System.out.println("Goodbye!");
     }
 
-    /** Prints the available menu options. */
     private void displayMenu() {
-        System.out.println("\n=== Main Menu ===");
-        System.out.println("1. Add");
-        System.out.println("2. View All");
-        System.out.println("3. Search");
-        System.out.println("4. Update");
-        System.out.println("5. Delete");
-        System.out.println("6. Bulk Raise");
-        System.out.println("0. Exit");
+        System.out.println("\n╔══════════ Employee Manager ══════════╗");
+        System.out.println("║ 1) Add        2) View All           ║");
+        System.out.println("║ 3) Search     4) Update             ║");
+        System.out.println("║ 5) Delete     6) Bulk Raise         ║");
+        System.out.println("║ 0) Exit                            ║");
+        System.out.println("╚══════════════════════════════════════╝");
     }
 
-    /** Collects input to add a new Employee via the service. */
     private void add() {
         System.out.println("\n-- Add Employee --");
         Employee e = new Employee();
@@ -66,43 +61,49 @@ public class ConsoleUI {
         System.out.println(id > 0 ? "Added, ID=" + id : "Add failed.");
     }
 
-    /** Retrieves and prints all employees. */
     private void viewAll() {
-        System.out.println("\n-- All Employees --");
         List<Employee> list = service.findAll();
         if (list.isEmpty()) {
-            System.out.println("None.");
-        } else {
-            list.forEach(emp -> System.out.println(emp + "\n"));
+            System.out.println("No employees found.");
+            return;
+        }
+        System.out.printf("%-5s %-20s %-10s %-15s %-10s%n",
+                          "ID", "Name", "SSN", "Job Title", "Salary");
+        System.out.println("---------------------------------------------------------------");
+        for (Employee e : list) {
+            System.out.printf("%-5d %-20s %-10s %-15s $%,10.2f%n",
+                              e.getEmpID(), e.getName(),
+                              e.getSSN(), e.getJobTitle(),
+                              e.getSalary());
         }
     }
 
-    /** Offers ID / Name / SSN search, then prints result(s). */
     private void search() {
-        System.out.println("\n-- Search: 1.ID 2.Name 3.SSN");
+        System.out.println("\n-- Search --");
+        System.out.println("1) By ID   2) By Name   3) By SSN");
         int o = getInt("Option: ");
         switch (o) {
             case 1 -> {
-                int id = getInt("ID: ");
+                int id = getInt("Enter ID: ");
                 Optional<Employee> e = service.searchByID(id);
                 System.out.println(e.orElse(null));
             }
             case 2 -> {
-                String nm = getString("Name: ");
-                service.searchByName(nm).forEach(emp -> System.out.println(emp + "\n"));
+                String nm = getString("Enter name pattern: ");
+                service.searchByName(nm)
+                       .forEach(emp -> System.out.println(emp + "\n"));
             }
             case 3 -> {
-                String ssn = getString("SSN: ");
+                String ssn = getString("Enter SSN: ");
                 System.out.println(service.searchBySSN(ssn).orElse(null));
             }
-            default -> System.out.println("Invalid.");
+            default -> System.out.println("Invalid search option.");
         }
     }
 
-    /** Prompts for empID, fetches record, then allows field-by-field edits. */
     private void update() {
-        System.out.println("\n-- Update --");
-        int id = getInt("ID: ");
+        System.out.println("\n-- Update Employee --");
+        int id = getInt("Enter ID: ");
         Optional<Employee> opt = service.searchByID(id);
         if (opt.isEmpty()) {
             System.out.println("Not found.");
@@ -111,46 +112,48 @@ public class ConsoleUI {
         Employee emp = opt.get();
         System.out.println(emp);
 
-        // Only update if user types a non-blank input
         String nm = getOpt("Name [" + emp.getName() + "]: ");
         if (!nm.isBlank()) emp.setName(nm);
 
         String ssn = getOpt("SSN [" + emp.getSSN() + "]: ");
         if (!ssn.isBlank()) emp.setSSN(ssn);
 
-        String jt = getOpt("Job [" + emp.getJobTitle() + "]: ");
+        String jt = getOpt("Job Title [" + emp.getJobTitle() + "]: ");
         if (!jt.isBlank()) emp.setJobTitle(jt);
 
-        String dv = getOpt("Div [" + emp.getDivision() + "]: ");
+        String dv = getOpt("Division [" + emp.getDivision() + "]: ");
         if (!dv.isBlank()) emp.setDivision(dv);
 
-        String sl = getOpt("Sal [" + emp.getSalary() + "]: ");
+        String sl = getOpt("Salary [" + emp.getSalary() + "]: ");
         if (!sl.isBlank()) emp.setSalary(Double.parseDouble(sl));
 
-        String pi = getOpt("PayInfo [" + emp.getPayInfo() + "]: ");
+        String pi = getOpt("Pay Info [" + emp.getPayInfo() + "]: ");
         if (!pi.isBlank()) emp.setPayInfo(pi);
 
         System.out.println(service.update(emp) ? "Updated." : "Update failed.");
     }
 
-    /** Deletes by empID via the service. */
     private void delete() {
-        System.out.println("\n-- Delete --");
-        int id = getInt("ID: ");
-        System.out.println(service.delete(id) ? "Deleted." : "Delete failed.");
+        System.out.println("\n-- Delete Employee --");
+        int id = getInt("Enter ID to delete: ");
+        String confirm = getString("Are you sure? (y/N): ");
+        if (!confirm.equalsIgnoreCase("y")) {
+            System.out.println("Delete cancelled.");
+            return;
+        }
+        System.out.println(service.delete(id) ? "Deleted." : "No such employee.");
     }
 
-    /** Applies a bulk raise over a salary range. */
     private void bulkRaise() {
-        System.out.println("\n-- Bulk Raise --");
-        double min = getDouble("Min Sal: ");
-        double max = getDouble("Max Sal: ");
-        double pct = getDouble("Pct: ");
+        System.out.println("\n-- Bulk Salary Raise --");
+        double min = getDouble("Min Salary: ");
+        double max = getDouble("Max Salary: ");
+        double pct = getDouble("Raise %: ");
         service.applySalaryRaise(min, max, pct);
         System.out.println("Raise applied.");
     }
 
-    // Utility input helpers ----------------------------------------------
+    // Input helpers ----------------------------------------------------------
 
     private String getString(String prompt) {
         System.out.print(prompt);
@@ -168,7 +171,7 @@ public class ConsoleUI {
                 System.out.print(prompt);
                 return Integer.parseInt(scanner.nextLine().trim());
             } catch (NumberFormatException e) {
-                System.out.println("Please enter a valid integer.");
+                System.out.println("Invalid integer. Try again.");
             }
         }
     }
@@ -179,7 +182,7 @@ public class ConsoleUI {
                 System.out.print(prompt);
                 return Double.parseDouble(scanner.nextLine().trim());
             } catch (NumberFormatException e) {
-                System.out.println("Please enter a valid number.");
+                System.out.println("Invalid number. Try again.");
             }
         }
     }
