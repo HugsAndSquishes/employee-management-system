@@ -1,5 +1,13 @@
+// src/main/java/com/group02/model/Employee.java
 package com.group02.model;
 
+/**
+ * Domain object representing an employee record.
+ * <p>
+ * Contains identifying fields (empID, name, SSN) and
+ * business data (jobTitle, division, salary, payInfo).
+ * </p>
+ */
 public class Employee {
     private int empID;
     private String employeeName;
@@ -9,10 +17,20 @@ public class Employee {
     private double salary;
     private String payInfo;
 
-    public Employee() {
-    }
+    /** No-arg constructor for frameworks or manual population. */
+    public Employee() { }
 
-    public Employee(String employeeName, String SSN, String jobTitle, String division, double salary, String payInfo) {
+    /**
+     * Full constructor for creating a new Employee (before empID is assigned).
+     * @param employeeName full name
+     * @param SSN nine-digit SSN (no dashes)
+     * @param jobTitle role/title
+     * @param division department
+     * @param salary annual salary
+     * @param payInfo any additional pay-type info
+     */
+    public Employee(String employeeName, String SSN, String jobTitle,
+                    String division, double salary, String payInfo) {
         this.employeeName = employeeName;
         this.SSN = SSN;
         this.jobTitle = jobTitle;
@@ -21,33 +39,34 @@ public class Employee {
         this.payInfo = payInfo;
     }
 
+    /**
+     * Partial constructor used for lightweight lookups.
+     * @param empID generated ID
+     * @param employeeName name
+     * @param SSN SSN
+     */
     public Employee(int empID, String employeeName, String SSN) {
         this.empID = empID;
         this.employeeName = employeeName;
         this.SSN = SSN;
     }
 
-    public String getInfo() {
-        // TODO: Finish getInfo() function
-        return "Placeholder";
-    }
-
-    public void raiseSalary(double percentage) {
-        // Input should be actual percentage values (ex: 25) not decimals (ex: 0.25)
-    }
-
+    /**
+     * Returns a human-readable multi-line summary.
+     */
     @Override
     public String toString() {
         return "Employee ID: " + empID + "\n" +
-                "Employee Name: " + employeeName + "\n" +
-                "SSN: " + SSN + "\n" +
-                "Job Title: " + jobTitle + "\n" +
-                "Division: " + division + "\n" +
-                "Salary: " + salary + "\n" +
-                "Pay Info: " + payInfo;
+               "Name: " + employeeName + "\n" +
+               "SSN: " + SSN + "\n" +
+               "Job Title: " + jobTitle + "\n" +
+               "Division: " + division + "\n" +
+               "Salary: " + salary + "\n" +
+               "Pay Info: " + payInfo;
     }
 
-    // Getters and Setters
+    // Getters & setters -------------------------------------------------------
+
     public int getEmpID() {
         return empID;
     }
