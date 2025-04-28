@@ -1,29 +1,55 @@
-# Maven build directory
-/target/
-
-# IDE specific files
-/.idea/
-/*.iml
-/.vscode/
-
-# OS-specific files
-.DS_Store
-Thumbs.db
+# Compiled classes
+*.class
 
 # Log files
 *.log
 
-# Java keystores and SSL certificates
-*.jks
-*.p12
+# Package files
+*.jar
+*.war
+*.ear
 
-# Backup files
+# Maven build output
+/target/
+/release.properties
+/dependency-reduced-pom.xml
+/buildNumber.properties
+/*.lastUpdated
+
+# Flyway history
+flyway_schema_history
+
+# IDEs and editors
+# Eclipse
+/.classpath
+/.project
+/.settings/
+/*.launch
+
+# IntelliJ IDEA
+/.idea/
+/*.iml
+/*.iws
+/out/
+
+# VS Code
+/.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Temporary files
+*.tmp
+*.swp
 *~
-*.bak
 
-# Node.js dependencies
-/node_modules/
+# Environment variables
+.env
 
-# Python virtual environment
-/venv/
-/__pycache__/
+# H2 database files (if ever used)
+/*.mv.db
+/*.trace.db

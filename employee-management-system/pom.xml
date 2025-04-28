@@ -1,58 +1,146 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <groupId>com.group02</groupId>
   <artifactId>employee-management-system</artifactId>
   <version>1.0-SNAPSHOT</version>
-
   <name>employee-management-system</name>
-  <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
+
+    <!-- JavaFX settings -->
+    <javafx.version>21.0.1</javafx.version>
+    <!-- change this to your platform: win, mac, or linux -->
+    <javafx.platform>win</javafx.platform>
   </properties>
 
   <dependencies>
-     <!-- MySQL Connector -->
+    <!-- MySQL Connector -->
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>8.0.33</version>
     </dependency>
 
-    <!-- HikariCP for connection pooling (optional but recommended) -->
+    <!-- HikariCP for connection pooling -->
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
       <version>5.0.1</version>
     </dependency>
 
+    <!-- Flyway core and MySQL support -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>9.21.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-mysql</artifactId>
+      <version>9.21.1</version>
+    </dependency>
+
+    <!-- JUnit for testing -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- JavaFX modules with platform-specific classifier -->
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-controls</artifactId>
+      <version>${javafx.version}</version>
+      <classifier>${javafx.platform}</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-fxml</artifactId>
+      <version>${javafx.version}</version>
+      <classifier>${javafx.platform}</classifier>
+    </dependency>
   </dependencies>
 
   <build>
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
+    <pluginManagement>
       <plugins>
-        <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
+        <!-- Exec plugin to run the main class -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.1.0</version>
+          <configuration>
+            <mainClass>com.group02.App</mainClass>
+          </configuration>
+        </plugin>
+
+        <!-- Copy resources plugin -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.3.1</version>
+          <executions>
+            <execution>
+              <id>copy-resources</id>
+              <phase>process-resources</phase>
+              <goals>
+                <goal>copy-resources</goal>
+              </goals>
+              <configuration>
+                <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                <resources>
+                  <resource>
+                    <directory>src/main/resources</directory>
+                    <filtering>true</filtering>
+                  </resource>
+                </resources>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- Properties plugin for environment-specific configs -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>properties-maven-plugin</artifactId>
+          <version>1.1.0</version>
+          <executions>
+            <execution>
+              <phase>initialize</phase>
+              <goals>
+                <goal>read-project-properties</goal>
+              </goals>
+              <configuration>
+                <files>
+                  <file>src/main/resources/application-${env}.properties</file>
+                </files>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- Standard lifecycle plugins -->
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <version>3.1.0</version>
-        </plugin>
-        <!-- default lifecycle, jar packaging: see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
-        <plugin>
-          <artifactId>maven-resources-plugin</artifactId>
-          <version>3.0.2</version>
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
@@ -62,28 +150,40 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.22.1</version>
         </plugin>
+
+        <!-- Flyway Maven Plugin -->
         <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-install-plugin</artifactId>
-          <version>2.5.2</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.8.2</version>
-        </plugin>
-        <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
-        <plugin>
-          <artifactId>maven-site-plugin</artifactId>
-          <version>3.7.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.0.0</version>
+          <groupId>org.flywaydb</groupId>
+          <artifactId>flyway-maven-plugin</artifactId>
+          <version>9.21.1</version>
+          <configuration>
+            <url>${db.url}</url>
+            <user>${db.user}</user>
+            <password>${db.password}</password>
+            <schemas>
+              <schema>${db.schema}</schema>
+            </schemas>
+            <locations>
+              <location>classpath:db/migration</location>
+            </locations>
+            <baselineOnMigrate>true</baselineOnMigrate>
+            <cleanDisabled>false</cleanDisabled>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
+
+    <plugins>
+      <!-- JavaFX Maven Plugin for launching the JavaFX application -->
+      <plugin>
+        <groupId>org.openjfx</groupId>
+        <artifactId>javafx-maven-plugin</artifactId>
+        <version>0.0.8</version>
+        <configuration>
+          <!-- This should match the JavaFX Application class -->
+          <mainClass>com.group02.ui.EmployeeApp</mainClass>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 </project>
