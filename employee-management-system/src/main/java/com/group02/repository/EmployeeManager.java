@@ -197,6 +197,34 @@ public class EmployeeManager implements Searchable {
         // Return a list of employees
         return employees;
     }
+
+    /*
+     * public List<Employee> findByDivision(String division) {
+     * String sql = "SELECT * FROM employees WHERE division REGEXP ?";
+     * List<Employee> employees = new ArrayList<>();
+     * 
+     * try (Connection conn = DatabaseUtil.getConnection();
+     * PreparedStatement stmt = conn.prepareStatement(sql)) {
+     * 
+     * stmt.setString(1, division);
+     * 
+     * try (ResultSet rs = stmt.executeQuery()) {
+     * // Note that this uses a while loop instead of the usual if statement because
+     * // this function returns a list
+     * while (rs.next()) {
+     * Employee employee = mapResultSetToEmployee(rs);
+     * employees.add(employee);
+     * }
+     * }
+     * } catch (Exception e) {
+     * e.printStackTrace();
+     * }
+     * 
+     * // Return a list of employees
+     * return employees;
+     * }
+     * 
+     */
     // #endregion
 
     // #region Update Functions
@@ -238,7 +266,7 @@ public class EmployeeManager implements Searchable {
      * @param fieldValue The new value for the field
      * @return true if update successful, false otherwise
      */
-    boolean updateField(int empID, String fieldName, Object fieldValue) {
+    public boolean updateField(int empID, String fieldName, Object fieldValue) {
         List<String> validFields = List.of(
                 "employeeName", "division", "SSN", "jobTitle", "salary", "payInfo");
 
