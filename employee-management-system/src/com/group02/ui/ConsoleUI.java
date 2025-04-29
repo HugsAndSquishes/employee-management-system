@@ -1,389 +1,476 @@
 package com.group02.ui;
 
-import com.group02.model.Employee;
 import com.group02.model.DynamicEmployee;
+import com.group02.model.Employee;
+import com.group02.service.DynamicEmployeeService;
 import com.group02.service.DynamicEmployeeServiceImpl;
+import com.group02.service.EmployeeService;
+import com.group02.service.EmployeeServiceImpl;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Scanner;
 
-/**
- * Text-based UI for the Employee Management System.
- * Presents a menu loop for CRUD + bulk raise, with improved formatting.
- */
 public class ConsoleUI {
-    private final Scanner scanner = new Scanner(System.in);
-    private final DynamicEmployeeServiceImpl service;
+    private EmployeeService employeeService;
+    private DynamicEmployeeService dynamicEmployeeService;
+    private Scanner scanner;
 
-    public ConsoleUI(DynamicEmployeeServiceImpl service) {
-        this.service = service;
+    public ConsoleUI() {
+        this.employeeService = new EmployeeServiceImpl();
+        this.dynamicEmployeeService = new DynamicEmployeeServiceImpl();
+        this.scanner = new Scanner(System.in);
     }
 
-    public void run() {
+    public void start() {
         boolean running = true;
+
         while (running) {
-            displayMenu();
-            int choice = getInt("Choice: ");
+            displayMainMenu();
+            String choice = scanner.nextLine();
+
             switch (choice) {
-                case 1 -> add();
-                case 2 -> viewAll();
-                case 3 -> search();
-                case 4 -> update();
-                case 5 -> delete();
-                case 6 -> bulkRaise();
-                case 7 -> addDynamicField();
-                case 8 -> updateDynamicFields();
-                case 9 -> viewDynamicEmployee();
-                case 0 -> running = false;
-                default -> System.out.println("Invalid option. Please try again.");
-            }
-            System.out.println();
-        }
-        System.out.println("Goodbye!");
-    }
-
-    private void displayMenu() {
-        System.out.println("\n╔══════════ Employee Manager ══════════╗");
-        System.out.println("║ 1) Add        2) View All              ║");
-        System.out.println("║ 3) Search     4) Update                ║");
-        System.out.println("║ 5) Delete     6) Bulk Raise            ║");
-        System.out.println("║ 7) Add Field  8) Update Fields         ║");
-        System.out.println("║ 9) View Dynamic Employee  0) Exit      ║");
-        System.out.println("╚════════════════════════════════════════╝");
-    }
-
-    private void add() {
-        System.out.println("\n-- Add Employee --");
-        Employee e = new Employee();
-        e.setName(getString("Name: "));
-        e.setJobTitle(getString("Job Title: "));
-        e.setDivision(getString("Division: "));
-        e.setSalary(getDouble("Salary: "));
-
-        String payInfo;
-        do {
-            payInfo = getString("Pay Info (FULLTIME or PARTTIME): ");
-            payInfo = payInfo.toUpperCase();
-        } while (!payInfo.equals("FULLTIME") && !payInfo.equals("PARTTIME"));
-
-        e.setPayInfo(payInfo);
-
-        int id = service.add(e);
-        System.out.println(id > 0 ? "Added, ID=" + id : "Add failed.");
-    }
-
-    private void addDynamicField() {
-        System.out.println("\n-- Add Dynamic Field --");
-        String fieldName = getString("Field Name: ");
-        String dataType = getString("Data Type (VARCHAR(255), INT, DATE, etc.): ");
-        String defaultValueStr = getOpt("Default Value (leave empty for null): ");
-
-        Object defaultValue = null;
-        if (!defaultValueStr.isEmpty()) {
-            // Convert string to appropriate type based on dataType
-            if (dataType.toUpperCase().contains("INT")) {
-                defaultValue = Integer.parseInt(defaultValueStr);
-            } else if (dataType.toUpperCase().contains("DECIMAL") ||
-                    dataType.toUpperCase().contains("DOUBLE") ||
-                    dataType.toUpperCase().contains("FLOAT")) {
-                defaultValue = Double.parseDouble(defaultValueStr);
-            } else {
-                defaultValue = defaultValueStr;
+                case "1":
+                    displayAllEmployees();
+                    break;
+                case "2":
+                    searchEmployee();
+                    break;
+                case "3":
+                    addEmployee();
+                    break;
+                case "4":
+                    updateEmployee();
+                    break;
+                case "5":
+                    deleteEmployee();
+                    break;
+                case "6":
+                    updateSalariesInRange();
+                    break;
+                case "7":
+                    reportsMenu();
+                    break;
+                case "8":
+                    addColumn();
+                    break;
+                case "9":
+                    running = false;
+                    System.out.println("Exiting program. Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+                    break;
             }
         }
-
-        boolean success = service.addDynamicField(fieldName, dataType, defaultValue);
-        System.out.println(success ? "Field added successfully." : "Failed to add field.");
     }
 
-    private void viewAll() {
-        List<Employee> list = service.findAll();
-        if (list.isEmpty()) {
-            System.out.println("No employees found.");
-            return;
-        }
-        System.out.printf("%-5s %-20s %-15s %-10s%n",
-                "ID", "Name", "Job Title", "Salary");
-        System.out.println("---------------------------------------------------------------");
-        for (Employee e : list) {
-            System.out.printf("%-5d %-20s %-15s $%,10.2f%n",
-                    e.getEmpID(), e.getName(),
-                    e.getJobTitle(), e.getSalary());
-        }
+    private void displayMainMenu() {
+        System.out.println("\n========== EMPLOYEE MANAGEMENT SYSTEM ==========");
+        System.out.println("1. Display All Employees");
+        System.out.println("2. Search Employee");
+        System.out.println("3. Add Employee");
+        System.out.println("4. Update Employee");
+        System.out.println("5. Delete Employee");
+        System.out.println("6. Update Salaries in Range");
+        System.out.println("7. Reports");
+        System.out.println("8. Add Column to Employee Table");
+        System.out.println("9. Exit");
+        System.out.print("Enter your choice: ");
     }
 
-    private void search() {
-        System.out.println("\n-- Search --");
-        System.out.println("1) By ID   2) By Name   3) By Dynamic Field");
-        int o = getInt("Option: ");
-        switch (o) {
-            case 1 -> {
-                int id = getInt("Enter ID: ");
-                Optional<Employee> e = service.searchByID(id);
-                System.out.println(e.orElse(null));
-            }
-            case 2 -> {
-                String nm = getString("Enter name pattern: ");
-                service.searchByName(nm)
-                        .forEach(emp -> System.out.println(emp + "\n"));
-            }
-            case 3 -> {
-                searchByDynamicField();
-            }
-            default -> System.out.println("Invalid search option.");
-        }
-    }
+    private void displayAllEmployees() {
+        List<Employee> employees = employeeService.getAllEmployees();
 
-    private void searchByDynamicField() {
-        System.out.println("\n-- Search by Dynamic Field --");
-
-        // Get available dynamic fields
-        List<String> fields = service.getKnownDynamicFields();
-
-        if (fields.isEmpty()) {
-            System.out.println("No dynamic fields defined yet.");
+        if (employees.isEmpty()) {
+            System.out.println("No employees found in the database.");
             return;
         }
 
-        // Display available fields
-        System.out.println("Available fields:");
-        for (int i = 0; i < fields.size(); i++) {
-            System.out.printf("%d) %s%n", i + 1, fields.get(i));
+        System.out.println("\n========== ALL EMPLOYEES ==========");
+        for (Employee employee : employees) {
+            System.out.println(employee);
+            System.out.println("-----------------------------------");
+        }
+    }
+
+    private void searchEmployee() {
+        System.out.println("\n========== SEARCH EMPLOYEE ==========");
+        System.out.println("1. Search by ID");
+        System.out.println("2. Search by Name");
+        System.out.println("3. Search by Job Title");
+        System.out.println("4. Search by Division");
+        System.out.print("Enter your choice: ");
+
+        String choice = scanner.nextLine();
+        Map<String, Object> criteria = new HashMap<>();
+
+        switch (choice) {
+            case "1":
+                System.out.print("Enter Employee ID: ");
+                int id = Integer.parseInt(scanner.nextLine());
+                criteria.put("empID", id);
+                break;
+            case "2":
+                System.out.print("Enter Employee Name: ");
+                String name = scanner.nextLine();
+                criteria.put("employeeName", name);
+                break;
+            case "3":
+                System.out.print("Enter Job Title: ");
+                String jobTitle = scanner.nextLine();
+                criteria.put("jobTitle", jobTitle);
+                break;
+            case "4":
+                System.out.print("Enter Division: ");
+                String division = scanner.nextLine();
+                criteria.put("division", division);
+                break;
+            default:
+                System.out.println("Invalid option.");
+                return;
         }
 
-        // Get field selection
-        int fieldIndex = -1;
-        while (fieldIndex < 0 || fieldIndex >= fields.size()) {
-            fieldIndex = getInt("Select field (1-" + fields.size() + "): ") - 1;
+        List<Employee> employees = employeeService.searchEmployees(criteria);
+
+        if (employees.isEmpty()) {
+            System.out.println("No employees found matching the criteria.");
+            return;
         }
 
-        String fieldName = fields.get(fieldIndex);
-        String searchValue = getString("Enter search value: ");
+        System.out.println("\n========== SEARCH RESULTS ==========");
+        for (Employee employee : employees) {
+            System.out.println(employee);
+            System.out.println("-----------------------------------");
+        }
+    }
 
-        // Ask if pattern search should be used
-        String usePatternStr = getString("Use pattern matching? (y/n): ");
-        boolean usePattern = usePatternStr.equalsIgnoreCase("y");
+    private void addEmployee() {
+        System.out.println("\n========== ADD EMPLOYEE ==========");
 
-        List<DynamicEmployee> results;
-        if (usePattern) {
-            results = service.searchByDynamicFieldPattern(fieldName, searchValue);
+        System.out.print("Enter Employee Name: ");
+        String name = scanner.nextLine();
+
+        System.out.print("Enter Job Title: ");
+        String jobTitle = scanner.nextLine();
+
+        System.out.print("Enter Division: ");
+        String division = scanner.nextLine();
+
+        System.out.print("Enter Salary: ");
+        BigDecimal salary = new BigDecimal(scanner.nextLine());
+
+        System.out.print("Enter Pay Info (FULLTIME or PARTTIME): ");
+        String payInfo = scanner.nextLine().toUpperCase();
+        if (!payInfo.equals("FULLTIME") && !payInfo.equals("PARTTIME")) {
+            System.out.println("Invalid pay info. Must be FULLTIME or PARTTIME.");
+            return;
+        }
+
+        Employee employee = new Employee(0, name, jobTitle, division, salary, payInfo);
+
+        if (employeeService.addEmployee(employee)) {
+            System.out.println("Employee added successfully with ID: " + employee.getEmpID());
         } else {
-            results = service.searchByDynamicField(fieldName, searchValue);
+            System.out.println("Failed to add employee.");
         }
+    }
 
-        // Display results
-        if (results.isEmpty()) {
-            System.out.println("No matching employees found.");
+    private void updateEmployee() {
+        System.out.println("\n========== UPDATE EMPLOYEE ==========");
+
+        System.out.print("Enter Employee ID to update: ");
+        int id = Integer.parseInt(scanner.nextLine());
+
+        Employee employee = employeeService.getEmployeeById(id);
+        if (employee == null) {
+            System.out.println("Employee not found with ID: " + id);
             return;
         }
 
-        System.out.println("\nMatching Employees:");
-        System.out.printf("%-5s %-20s %-15s %-10s%n",
-                "ID", "Name", "Job Title", fieldName);
-        System.out.println("------------------------------------------------------");
+        System.out.println("Current Employee Details:");
+        System.out.println(employee);
 
-        for (DynamicEmployee emp : results) {
-            Employee baseEmp = emp.getBaseEmployee();
-            Object fieldValue = emp.getField(fieldName);
+        System.out.println("\nEnter new details (press Enter to keep current value):");
 
-            System.out.printf("%-5d %-20s %-15s %-10s%n",
-                    baseEmp.getEmpID(),
-                    baseEmp.getName(),
-                    baseEmp.getJobTitle(),
-                    fieldValue != null ? fieldValue.toString() : "null");
+        System.out.print("Enter Employee Name [" + employee.getEmployeeName() + "]: ");
+        String name = scanner.nextLine();
+        if (!name.isEmpty()) {
+            employee.setEmployeeName(name);
         }
 
-        // Ask if user wants to view full details of any employee
-        String viewFullStr = getString("\nView full details of an employee? (y/n): ");
-        if (viewFullStr.equalsIgnoreCase("y")) {
-            int empID = getInt("Enter employee ID: ");
+        System.out.print("Enter Job Title [" + employee.getJobTitle() + "]: ");
+        String jobTitle = scanner.nextLine();
+        if (!jobTitle.isEmpty()) {
+            employee.setJobTitle(jobTitle);
+        }
 
-            // Find the employee in results
-            Optional<DynamicEmployee> empOpt = results.stream()
-                    .filter(e -> e.getBaseEmployee().getEmpID() == empID)
-                    .findFirst();
+        System.out.print("Enter Division [" + employee.getDivision() + "]: ");
+        String division = scanner.nextLine();
+        if (!division.isEmpty()) {
+            employee.setDivision(division);
+        }
 
-            if (empOpt.isPresent()) {
-                DynamicEmployee emp = empOpt.get();
-                System.out.println("\n" + emp.getBaseEmployee().toString());
+        System.out.print("Enter Salary [" + employee.getSalary() + "]: ");
+        String salaryStr = scanner.nextLine();
+        if (!salaryStr.isEmpty()) {
+            employee.setSalary(new BigDecimal(salaryStr));
+        }
 
-                // Display dynamic fields
-                Map<String, Object> dynamicFields = emp.getAllDynamicFields();
-                if (!dynamicFields.isEmpty()) {
-                    System.out.println("\nDynamic Fields:");
-                    for (Map.Entry<String, Object> entry : dynamicFields.entrySet()) {
-                        System.out.printf("%-20s: %s%n", entry.getKey(), entry.getValue());
+        System.out.print("Enter Pay Info (FULLTIME or PARTTIME) [" + employee.getPayInfo() + "]: ");
+        String payInfo = scanner.nextLine().toUpperCase();
+        if (!payInfo.isEmpty()) {
+            if (!payInfo.equals("FULLTIME") && !payInfo.equals("PARTTIME")) {
+                System.out.println("Invalid pay info. Must be FULLTIME or PARTTIME.");
+                return;
+            }
+            employee.setPayInfo(payInfo);
+        }
+
+        // Check if there are dynamic attributes to update
+        Map<String, String> columns = dynamicEmployeeService.getTableColumns();
+        DynamicEmployee dynamicEmployee = dynamicEmployeeService.getDynamicEmployeeById(id);
+
+        if (dynamicEmployee != null) {
+            for (Map.Entry<String, String> column : columns.entrySet()) {
+                String columnName = column.getKey();
+
+                // Skip standard columns
+                if (columnName.equals("empID") || columnName.equals("employeeName") ||
+                        columnName.equals("jobTitle") || columnName.equals("division") ||
+                        columnName.equals("salary") || columnName.equals("payInfo")) {
+                    continue;
+                }
+
+                Object currentValue = dynamicEmployee.getAttribute(columnName);
+                System.out.print("Enter " + columnName + " [" + currentValue + "]: ");
+                String value = scanner.nextLine();
+
+                if (!value.isEmpty()) {
+                    // Try to convert the string value to the appropriate type
+                    if (column.getValue().contains("INT")) {
+                        dynamicEmployee.addAttribute(columnName, Integer.parseInt(value));
+                    } else if (column.getValue().contains("DECIMAL") || column.getValue().contains("DOUBLE")) {
+                        dynamicEmployee.addAttribute(columnName, new BigDecimal(value));
+                    } else {
+                        dynamicEmployee.addAttribute(columnName, value);
                     }
                 }
+            }
+
+            if (dynamicEmployeeService.updateDynamicEmployee(dynamicEmployee)) {
+                System.out.println("Employee updated successfully.");
             } else {
-                System.out.println("Employee not found in search results.");
-            }
-        }
-    }
-
-    private void update() {
-        System.out.println("\n-- Update Employee --");
-        int id = getInt("Enter ID: ");
-        Optional<Employee> opt = service.searchByID(id);
-        if (opt.isEmpty()) {
-            System.out.println("Not found.");
-            return;
-        }
-        Employee emp = opt.get();
-        System.out.println(emp);
-
-        String nm = getOpt("Name [" + emp.getName() + "]: ");
-        if (!nm.isBlank())
-            emp.setName(nm);
-
-        String jt = getOpt("Job Title [" + emp.getJobTitle() + "]: ");
-        if (!jt.isBlank())
-            emp.setJobTitle(jt);
-
-        String dv = getOpt("Division [" + emp.getDivision() + "]: ");
-        if (!dv.isBlank())
-            emp.setDivision(dv);
-
-        String sl = getOpt("Salary [" + emp.getSalary() + "]: ");
-        if (!sl.isBlank())
-            emp.setSalary(Double.parseDouble(sl));
-
-        String pi = getOpt("Pay Info [" + emp.getPayInfo() + "]: ");
-        if (!pi.isBlank())
-            emp.setPayInfo(pi);
-
-        System.out.println(service.update(emp) ? "Updated." : "Update failed.");
-    }
-
-    private void updateDynamicFields() {
-        System.out.println("\n-- Update Dynamic Fields --");
-        int empID = getInt("Employee ID: ");
-
-        Optional<DynamicEmployee> empOpt = service.getDynamicEmployee(empID);
-        if (empOpt.isEmpty()) {
-            System.out.println("Employee not found.");
-            return;
-        }
-
-        DynamicEmployee emp = empOpt.get();
-
-        // Show employee basic info
-        Employee baseEmp = emp.getBaseEmployee();
-        System.out.printf("Updating fields for: %s (ID: %d)%n",
-                baseEmp.getName(), baseEmp.getEmpID());
-
-        // Get dynamic fields
-        Map<String, Object> fields = emp.getAllDynamicFields();
-        List<String> knownFields = service.getKnownDynamicFields();
-
-        if (knownFields.isEmpty()) {
-            System.out.println("No dynamic fields defined yet.");
-            return;
-        }
-
-        // Update each field
-        for (String fieldName : knownFields) {
-            Object currentValue = emp.getField(fieldName);
-            String prompt = String.format("%s [%s]: ", fieldName, currentValue);
-            String newValueStr = getOpt(prompt);
-
-            if (!newValueStr.isEmpty()) {
-                // Convert to appropriate type (simplified)
-                Object newValue = newValueStr;
-                if (currentValue instanceof Integer) {
-                    newValue = Integer.parseInt(newValueStr);
-                } else if (currentValue instanceof Double) {
-                    newValue = Double.parseDouble(newValueStr);
-                }
-
-                emp.setField(fieldName, newValue);
-            }
-        }
-
-        boolean success = service.updateDynamicEmployee(emp);
-        System.out.println(success ? "Updated successfully." : "Update failed.");
-    }
-
-    private void viewDynamicEmployee() {
-        System.out.println("\n-- View Dynamic Employee --");
-        int empID = getInt("Employee ID: ");
-
-        Optional<DynamicEmployee> empOpt = service.getDynamicEmployee(empID);
-        if (empOpt.isEmpty()) {
-            System.out.println("Employee not found.");
-            return;
-        }
-
-        DynamicEmployee emp = empOpt.get();
-
-        // Display base employee info
-        System.out.println(emp.getBaseEmployee().toString());
-
-        // Display dynamic fields
-        Map<String, Object> fields = emp.getAllDynamicFields();
-        if (!fields.isEmpty()) {
-            System.out.println("\nDynamic Fields:");
-            for (Map.Entry<String, Object> entry : fields.entrySet()) {
-                System.out.printf("%-20s: %s%n", entry.getKey(), entry.getValue());
+                System.out.println("Failed to update employee.");
             }
         } else {
-            System.out.println("\nNo dynamic fields set for this employee.");
+            if (employeeService.updateEmployee(employee)) {
+                System.out.println("Employee updated successfully.");
+            } else {
+                System.out.println("Failed to update employee.");
+            }
         }
     }
 
-    private void delete() {
-        System.out.println("\n-- Delete Employee --");
-        int id = getInt("Enter ID to delete: ");
-        String confirm = getString("Are you sure? (y/N): ");
-        if (!confirm.equalsIgnoreCase("y")) {
-            System.out.println("Delete cancelled.");
+    private void deleteEmployee() {
+        System.out.println("\n========== DELETE EMPLOYEE ==========");
+
+        System.out.print("Enter Employee ID to delete: ");
+        int id = Integer.parseInt(scanner.nextLine());
+
+        Employee employee = employeeService.getEmployeeById(id);
+        if (employee == null) {
+            System.out.println("Employee not found with ID: " + id);
             return;
         }
-        System.out.println(service.delete(id) ? "Deleted." : "No such employee.");
+
+        System.out.println("Employee to delete:");
+        System.out.println(employee);
+
+        System.out.print("Are you sure you want to delete this employee? (y/n): ");
+        String confirm = scanner.nextLine().toLowerCase();
+
+        if (confirm.equals("y")) {
+            if (employeeService.deleteEmployee(id)) {
+                System.out.println("Employee deleted successfully.");
+            } else {
+                System.out.println("Failed to delete employee.");
+            }
+        } else {
+            System.out.println("Delete operation cancelled.");
+        }
     }
 
-    private void bulkRaise() {
-        System.out.println("\n-- Bulk Salary Raise --");
-        double min = getDouble("Min Salary: ");
-        double max = getDouble("Max Salary: ");
-        double pct = getDouble("Raise %: ");
-        service.applySalaryRaise(min, max, pct);
-        System.out.println("Raise applied.");
+    private void updateSalariesInRange() {
+        System.out.println("\n========== UPDATE SALARIES IN RANGE ==========");
+
+        System.out.print("Enter minimum salary: ");
+        BigDecimal minSalary = new BigDecimal(scanner.nextLine());
+
+        System.out.print("Enter maximum salary: ");
+        BigDecimal maxSalary = new BigDecimal(scanner.nextLine());
+
+        System.out.print("Enter percentage increase (e.g., 3.2 for 3.2%): ");
+        double percentageIncrease = Double.parseDouble(scanner.nextLine());
+
+        if (percentageIncrease <= 0) {
+            System.out.println("Percentage increase must be positive.");
+            return;
+        }
+
+        System.out.println("This will update salaries for all employees with salary >= " +
+                minSalary + " and < " + maxSalary + " by " + percentageIncrease + "%");
+        System.out.print("Are you sure? (y/n): ");
+        String confirm = scanner.nextLine().toLowerCase();
+
+        if (confirm.equals("y")) {
+            if (employeeService.updateSalariesInRange(minSalary, maxSalary, percentageIncrease)) {
+                System.out.println("Salaries updated successfully.");
+            } else {
+                System.out.println("Failed to update salaries or no employees in the specified range.");
+            }
+        } else {
+            System.out.println("Operation cancelled.");
+        }
     }
 
-    // Input helpers ----------------------------------------------------------
+    private void reportsMenu() {
+        boolean inReportsMenu = true;
 
-    private String getString(String prompt) {
-        System.out.print(prompt);
-        return scanner.nextLine().trim();
-    }
+        while (inReportsMenu) {
+            System.out.println("\n========== REPORTS ==========");
+            System.out.println("1. Full-time Employee Information");
+            System.out.println("2. Total Pay by Job Title");
+            System.out.println("3. Total Pay by Division");
+            System.out.println("4. Back to Main Menu");
+            System.out.print("Enter your choice: ");
 
-    private String getOpt(String prompt) {
-        System.out.print(prompt);
-        return scanner.nextLine().trim();
-    }
+            String choice = scanner.nextLine();
 
-    private int getInt(String prompt) {
-        while (true) {
-            try {
-                System.out.print(prompt);
-                return Integer.parseInt(scanner.nextLine().trim());
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid integer. Try again.");
+            switch (choice) {
+                case "1":
+                    showFullTimeEmployees();
+                    break;
+                case "2":
+                    showTotalPayByJobTitle();
+                    break;
+                case "3":
+                    showTotalPayByDivision();
+                    break;
+                case "4":
+                    inReportsMenu = false;
+                    break;
+                default:
+                    System.out.println("Invalid option. Please try again.");
+                    break;
             }
         }
     }
 
-    private double getDouble(String prompt) {
-        while (true) {
-            try {
-                System.out.print(prompt);
-                return Double.parseDouble(scanner.nextLine().trim());
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid number. Try again.");
-            }
+    private void showFullTimeEmployees() {
+        Map<String, Object> criteria = new HashMap<>();
+        criteria.put("payInfo", "FULLTIME");
+
+        List<Employee> employees = employeeService.searchEmployees(criteria);
+
+        if (employees.isEmpty()) {
+            System.out.println("No full-time employees found.");
+            return;
+        }
+
+        System.out.println("\n========== FULL-TIME EMPLOYEES ==========");
+        for (Employee employee : employees) {
+            System.out.println(employee);
+            System.out.println("-----------------------------------");
+        }
+    }
+
+    private void showTotalPayByJobTitle() {
+        Map<String, BigDecimal> totalPayByJobTitle = employeeService.getTotalPayByJobTitle();
+
+        if (totalPayByJobTitle.isEmpty()) {
+            System.out.println("No data available.");
+            return;
+        }
+
+        System.out.println("\n========== TOTAL PAY BY JOB TITLE ==========");
+        for (Map.Entry<String, BigDecimal> entry : totalPayByJobTitle.entrySet()) {
+            System.out.printf("%-30s $%,.2f%n", entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void showTotalPayByDivision() {
+        Map<String, BigDecimal> totalPayByDivision = employeeService.getTotalPayByDivision();
+
+        if (totalPayByDivision.isEmpty()) {
+            System.out.println("No data available.");
+            return;
+        }
+
+        System.out.println("\n========== TOTAL PAY BY DIVISION ==========");
+        for (Map.Entry<String, BigDecimal> entry : totalPayByDivision.entrySet()) {
+            System.out.printf("%-30s $%,.2f%n", entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void addColumn() {
+        System.out.println("\n========== ADD COLUMN TO EMPLOYEE TABLE ==========");
+
+        // Print current columns
+        Map<String, String> currentColumns = dynamicEmployeeService.getTableColumns();
+        System.out.println("Current columns in employee table:");
+        for (Map.Entry<String, String> entry : currentColumns.entrySet()) {
+            System.out.println(entry.getKey() + " (" + entry.getValue() + ")");
+        }
+
+        System.out.print("\nEnter new column name: ");
+        String columnName = scanner.nextLine().trim();
+
+        if (columnName.isEmpty()) {
+            System.out.println("Column name cannot be empty.");
+            return;
+        }
+
+        if (currentColumns.containsKey(columnName)) {
+            System.out.println("Column already exists.");
+            return;
+        }
+
+        System.out.println("Select data type:");
+        System.out.println("1. VARCHAR(255) - Text");
+        System.out.println("2. INT - Integer");
+        System.out.println("3. DECIMAL(10,2) - Decimal number");
+        System.out.println("4. DATE - Date");
+        System.out.print("Enter your choice: ");
+
+        String choice = scanner.nextLine();
+        String dataType;
+
+        switch (choice) {
+            case "1":
+                dataType = "VARCHAR(255)";
+                break;
+            case "2":
+                dataType = "INT";
+                break;
+            case "3":
+                dataType = "DECIMAL(10,2)";
+                break;
+            case "4":
+                dataType = "DATE";
+                break;
+            default:
+                System.out.println("Invalid option. Using VARCHAR(255) by default.");
+                dataType = "VARCHAR(255)";
+                break;
+        }
+
+        if (dynamicEmployeeService.addColumn(columnName, dataType)) {
+            System.out.println("Column added successfully.");
+        } else {
+            System.out.println("Failed to add column.");
         }
     }
 }

@@ -1,93 +1,52 @@
 package com.group02.model;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * A decorator class that adds dynamic field capabilities to the Employee class
- */
-public class DynamicEmployee {
-    private Employee baseEmployee;
-    private Map<String, Object> dynamicFields;
+public class DynamicEmployee extends Employee {
+    private Map<String, Object> dynamicAttributes;
 
-    /**
-     * Create a new DynamicEmployee wrapper around an existing Employee
-     * 
-     * @param employee The base employee to decorate
-     */
-    public DynamicEmployee(Employee employee) {
-        this.baseEmployee = employee;
-        this.dynamicFields = new HashMap<>();
+    public DynamicEmployee() {
+        super();
+        this.dynamicAttributes = new HashMap<>();
     }
 
-    /**
-     * Get the underlying Employee object
-     * 
-     * @return The base Employee object
-     */
-    public Employee getBaseEmployee() {
-        return baseEmployee;
+    public DynamicEmployee(int empID, String employeeName, String jobTitle,
+            String division, BigDecimal salary, String payInfo) {
+        super(empID, employeeName, jobTitle, division, salary, payInfo);
+        this.dynamicAttributes = new HashMap<>();
     }
 
-    /**
-     * Add or update a dynamic field
-     * 
-     * @param fieldName The name of the field
-     * @param value     The value to store
-     */
-    public void setField(String fieldName, Object value) {
-        dynamicFields.put(fieldName, value);
+    public void addAttribute(String name, Object value) {
+        dynamicAttributes.put(name, value);
     }
 
-    /**
-     * Get the value of a dynamic field
-     * 
-     * @param fieldName The name of the field to retrieve
-     * @return The field value or null if not found
-     */
-    public Object getField(String fieldName) {
-        return dynamicFields.get(fieldName);
+    public Object getAttribute(String name) {
+        return dynamicAttributes.get(name);
     }
 
-    /**
-     * Check if a dynamic field exists
-     * 
-     * @param fieldName The field name to check
-     * @return true if the field exists, false otherwise
-     */
-    public boolean hasField(String fieldName) {
-        return dynamicFields.containsKey(fieldName);
+    public Map<String, Object> getAllDynamicAttributes() {
+        return new HashMap<>(dynamicAttributes);
     }
 
-    /**
-     * Remove a dynamic field
-     * 
-     * @param fieldName The field name to remove
-     * @return The removed value or null if not present
-     */
-    public Object removeField(String fieldName) {
-        return dynamicFields.remove(fieldName);
+    public void removeAttribute(String name) {
+        dynamicAttributes.remove(name);
     }
 
-    /**
-     * Get all dynamic fields
-     * 
-     * @return A map of all dynamic fields
-     */
-    public Map<String, Object> getAllDynamicFields() {
-        return new HashMap<>(dynamicFields);
-    }
-
-    /**
-     * Convert to string representation
-     */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(baseEmployee.toString());
-        sb.append("\nDynamic Fields:");
-        for (Map.Entry<String, Object> entry : dynamicFields.entrySet()) {
-            sb.append("\n").append(entry.getKey()).append(": ").append(entry.getValue());
+        StringBuilder sb = new StringBuilder(super.toString());
+        sb.append("\nDynamic Attributes: ");
+
+        if (dynamicAttributes.isEmpty()) {
+            sb.append("None");
+        } else {
+            for (Map.Entry<String, Object> entry : dynamicAttributes.entrySet()) {
+                sb.append("\n  ").append(entry.getKey()).append(": ").append(entry.getValue());
+            }
         }
+
         return sb.toString();
     }
 }

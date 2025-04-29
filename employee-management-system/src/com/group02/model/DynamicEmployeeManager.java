@@ -1,187 +1,154 @@
 package com.group02.repository;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
+import com.group02.config.DatabaseConfig;
+import com.group02.model.DynamicEmployee;
+
+import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
-import com.group02.model.DynamicEmployee;
-import com.group02.model.Employee;
-import com.group02.repository.EmployeeManager;
-import com.group02.util.DatabaseUtil;
-
-/**
- * Extends EmployeeManager with dynamic field capabilities
- */
 public class DynamicEmployeeManager extends EmployeeManager {
 
-    /**
-     * Add a dynamic field to the employees table and update schema
-     * 
-     * @param fieldName    The name of the field to add
-     * @param fieldType    The SQL data type (e.g., VARCHAR(255), INT)
-     * @param defaultValue Default value (can be null)
-     * @return true if successful, false otherwise
-     */
-    public boolean addDynamicField(String fieldName, String fieldType, Object defaultValue) {
-        // First add the column to the table
-        return super.addColumnToTable(fieldName, fieldType, defaultValue);
-    }
+    // Method to add a column to the employee table
+    public boolean addColumn(String columnName, String dataType) {
+        String sql = "ALTER TABLE employees ADD COLUMN " + columnName + " " + dataType;
 
-    /**
-     * Update a dynamic field value for a specific employee
-     * 
-     * @param empID     The employee ID
-     * @param fieldName The dynamic field name
-     * @param value     The value to set
-     * @return true if successful, false otherwise
-     */
-    public boolean updateDynamicField(int empID, String fieldName, Object value) {
-        // This leverages the existing updateField method from EmployeeManager
-        return super.updateField(empID, fieldName, value);
-    }
+        try (Connection conn = DatabaseConfig.getConnection();
+                Statement stmt = conn.createStatement()) {
 
-    /**
-     * Get all dynamic fields for an employee
-     * 
-     * @param empID       The employee ID
-     * @param knownFields List of dynamic field names to retrieve
-     * @return Map of field names to values
-     */
-    public Map<String, Object> getDynamicFields(int empID, String[] knownFields) {
-        Map<String, Object> fields = new HashMap<>();
+            stmt.executeUpdate(sql);
+            System.out.println("Column '" + columnName + "' added successfully");
+            return true;
 
-        if (knownFields.length == 0) {
-            return fields;
+        } catch (SQLException e) {
+            System.err.println("Error adding column: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
+    }
 
-        // Build a query to get all dynamic fields at once
-        StringBuilder query = new StringBuilder("SELECT ");
-        for (int i = 0; i < knownFields.length; i++) {
-            if (i > 0) {
-                query.append(", ");
+    // Method to get table metadata
+    public Map<String, String> getTableColumns() {
+        Map<String, String> columns = new HashMap<>();
+
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            DatabaseMetaData metaData = conn.getMetaData();
+            ResultSet rs = metaData.getColumns(null, null, "employees", null);
+
+            while (rs.next()) {
+                String columnName = rs.getString("COLUMN_NAME");
+                String dataType = rs.getString("TYPE_NAME");
+                columns.put(columnName, dataType);
             }
-            query.append(knownFields[i]);
-        }
-        // Make sure we're using the correct column name from the database
-        query.append(" FROM employees WHERE empID = ?"); // empID not employee_id
 
-        try (Connection conn = DatabaseUtil.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(query.toString())) {
+        } catch (SQLException e) {
+            System.err.println("Error getting table metadata: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return columns;
+    }
+
+    // Method to get a DynamicEmployee with all columns
+    public DynamicEmployee getDynamicEmployeeById(int empID) {
+        Map<String, String> columns = getTableColumns();
+
+        // Build column list dynamically based on actual table columns
+        StringBuilder columnList = new StringBuilder();
+        boolean first = true;
+
+        for (String column : columns.keySet()) {
+            if (!first) {
+                columnList.append(", ");
+            }
+            columnList.append(column);
+            first = false;
+        }
+
+        String sql = "SELECT " + columnList.toString() + " FROM employees WHERE empID = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, empID);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    for (String field : knownFields) {
-                        // Result might be any type, so get as Object
-                        Object value = rs.getObject(field);
-                        if (!rs.wasNull()) {
-                            fields.put(field, value);
+                    DynamicEmployee employee = new DynamicEmployee(
+                            rs.getInt("empID"),
+                            rs.getString("employeeName"),
+                            rs.getString("jobTitle"),
+                            rs.getString("division"),
+                            rs.getBigDecimal("salary"),
+                            rs.getString("payInfo"));
+
+                    // Add dynamic attributes (excluding base attributes)
+                    for (String column : columns.keySet()) {
+                        // Skip base columns
+                        if (column.equals("empID") || column.equals("employeeName") ||
+                                column.equals("jobTitle") || column.equals("division") ||
+                                column.equals("salary") || column.equals("payInfo")) {
+                            continue;
                         }
+
+                        employee.addAttribute(column, rs.getObject(column));
                     }
+
+                    return employee;
                 }
             }
+
         } catch (SQLException e) {
+            System.err.println("Error getting dynamic employee: " + e.getMessage());
             e.printStackTrace();
-            System.out.println("SQL Query was: " + query.toString()); // Add this for debugging
         }
 
-        return fields;
+        return null;
     }
 
-    /**
-     * Creates a DynamicEmployee by wrapping an Employee with its dynamic fields
-     * 
-     * @param empID       The employee ID
-     * @param knownFields Array of dynamic field names
-     * @return Optional containing the DynamicEmployee if found
-     */
-    public Optional<DynamicEmployee> getDynamicEmployee(int empID, String[] knownFields) {
-        // First get the base employee
-        Optional<Employee> empOpt = super.searchByID(empID);
+    // Update a dynamic employee with its dynamic attributes
+    public boolean updateDynamicEmployee(DynamicEmployee employee) {
+        // First update base employee fields
+        boolean baseResult = super.update(employee);
 
-        if (empOpt.isEmpty()) {
-            return Optional.empty();
-        }
-
-        // Create the dynamic employee wrapper
-        DynamicEmployee dynamicEmp = new DynamicEmployee(empOpt.get());
-
-        // Populate with dynamic fields
-        Map<String, Object> fields = getDynamicFields(empID, knownFields);
-        for (Map.Entry<String, Object> entry : fields.entrySet()) {
-            dynamicEmp.setField(entry.getKey(), entry.getValue());
-        }
-
-        return Optional.of(dynamicEmp);
-    }
-
-    /**
-     * Save a dynamic employee to the database
-     * 
-     * @param dynamicEmp The dynamic employee to save
-     * @return true if successful, false otherwise
-     */
-    public boolean saveDynamicEmployee(DynamicEmployee dynamicEmp) {
-        Employee baseEmp = dynamicEmp.getBaseEmployee();
-        int empID = baseEmp.getEmpID();
-
-        // First update the base employee
-        boolean success = super.updateEmployee(baseEmp);
-        if (!success) {
+        if (!baseResult) {
             return false;
         }
 
-        // Then update each dynamic field
-        Map<String, Object> fields = dynamicEmp.getAllDynamicFields();
-        for (Map.Entry<String, Object> entry : fields.entrySet()) {
-            success = super.updateField(empID, entry.getKey(), entry.getValue());
-            if (!success) {
-                return false;
-            }
+        // Then update dynamic fields
+        Map<String, Object> dynamicAttributes = employee.getAllDynamicAttributes();
+        if (dynamicAttributes.isEmpty()) {
+            return true; // No dynamic attributes to update
         }
 
-        return true;
-    }
+        StringBuilder sql = new StringBuilder("UPDATE employees SET ");
 
-    /**
-     * Check if any employee has a specific field value
-     * 
-     * @param fieldName  The name of the field to search
-     * @param fieldValue The value to search for
-     * @return true if at least one employee has this field value, false otherwise
-     */
-    public boolean fieldValueExists(String fieldName, Object fieldValue) {
-        String sql = "SELECT COUNT(*) FROM employees WHERE " + fieldName + " = ?";
-        try (Connection conn = DatabaseUtil.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            // bind based on runtime type
-            if (fieldValue instanceof String)
-                stmt.setString(1, (String) fieldValue);
-            else if (fieldValue instanceof Integer)
-                stmt.setInt(1, (Integer) fieldValue);
-            else if (fieldValue instanceof Double)
-                stmt.setDouble(1, (Double) fieldValue);
-            else if (fieldValue instanceof Boolean)
-                stmt.setBoolean(1, (Boolean) fieldValue);
-            else if (fieldValue == null)
-                stmt.setNull(1, Types.VARCHAR);
-            else
-                stmt.setString(1, fieldValue.toString());
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-                return false;
+        int i = 0;
+        for (String attribute : dynamicAttributes.keySet()) {
+            if (i > 0) {
+                sql.append(", ");
             }
+            sql.append(attribute).append(" = ?");
+            i++;
+        }
+
+        sql.append(" WHERE empID = ?");
+
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+
+            i = 1;
+            for (Object value : dynamicAttributes.values()) {
+                stmt.setObject(i++, value);
+            }
+
+            stmt.setInt(i, employee.getEmpID());
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+
         } catch (SQLException e) {
+            System.err.println("Error updating dynamic employee: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

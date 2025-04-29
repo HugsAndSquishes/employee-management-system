@@ -1,3 +1,4 @@
+// DatabaseConfig.java
 package com.group02.config;
 
 import java.io.InputStream;
@@ -73,7 +74,6 @@ public class DatabaseConfig {
         }
     }
 
-    // Rest of the DatabaseConfig class remains the same
     // Initialize database manually
     public static void initializeDatabase() {
         String url = dbProperties.getProperty("db.url");
@@ -99,14 +99,11 @@ public class DatabaseConfig {
             String createTableSQL = "CREATE TABLE IF NOT EXISTS employees (" +
                     "empID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
                     "employeeName VARCHAR(255), " +
-                    // "SSN VARCHAR(9) NOT NULL UNIQUE, " + // SSN: 9 characters, unique
                     "jobTitle VARCHAR(255), " +
                     "division VARCHAR(255), " +
                     "salary DECIMAL(10,2), " +
-                    "payInfo VARCHAR(8) NOT NULL, " + // Only 'FULLTIME' or 'PARTTIME'
-                    // "CONSTRAINT chk_ssn_length CHECK (CHAR_LENGTH(SSN) = 9), " + // SSN length
-                    // check
-                    "CONSTRAINT chk_payinfo CHECK (UPPER(payInfo) IN ('FULLTIME', 'PARTTIME'))" + // Pay info check
+                    "payInfo VARCHAR(8) NOT NULL, " +
+                    "CONSTRAINT chk_payinfo CHECK (UPPER(payInfo) IN ('FULLTIME', 'PARTTIME'))" +
                     ")";
             stmt.executeUpdate(createTableSQL);
 
@@ -132,7 +129,9 @@ public class DatabaseConfig {
         }
 
         try {
-            Statement stmt = connection.createStatement();
+            // Get a fresh connection if needed
+            Connection conn = getConnection();
+            Statement stmt = conn.createStatement();
             stmt.executeUpdate("DELETE FROM employees");
             stmt.close();
             System.out.println("Test data cleared successfully");
@@ -154,10 +153,21 @@ public class DatabaseConfig {
         return connection;
     }
 
+    // This method returns a new connection (not the singleton)
+    public static Connection getNewConnection() throws SQLException {
+        String url = dbProperties.getProperty("db.url");
+        String dbName = dbProperties.getProperty("db.name");
+        String user = dbProperties.getProperty("db.user");
+        String password = dbProperties.getProperty("db.password");
+
+        return DriverManager.getConnection(url + "/" + dbName, user, password);
+    }
+
     public static void closeConnection() {
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();
+                connection = null; // Set to null after closing
                 System.out.println("Database connection closed");
             }
         } catch (SQLException e) {

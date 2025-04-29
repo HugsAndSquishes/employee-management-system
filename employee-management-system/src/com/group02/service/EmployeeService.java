@@ -1,23 +1,26 @@
 package com.group02.service;
 
 import com.group02.model.Employee;
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 public interface EmployeeService {
-    int add(Employee e);
+    List<Employee> getAllEmployees();
 
-    boolean update(Employee e);
+    Employee getEmployeeById(int id);
 
-    boolean delete(int empID);
+    List<Employee> searchEmployees(Map<String, Object> criteria);
 
-    List<Employee> findAll();
+    boolean addEmployee(Employee employee);
 
-    Optional<Employee> searchByID(int empID);
+    boolean updateEmployee(Employee employee);
 
-    List<Employee> searchByName(String pattern);
+    boolean deleteEmployee(int id);
 
-    void applySalaryRaise(double minSalary, double maxSalary, double raisePercent);
+    boolean updateSalariesInRange(BigDecimal minSalary, BigDecimal maxSalary, double percentageIncrease);
 
-    Boolean addColumnToTable(String columnName, String columnType, Object defaultValue);
+    Map<String, BigDecimal> getTotalPayByJobTitle();
+
+    Map<String, BigDecimal> getTotalPayByDivision();
 }
