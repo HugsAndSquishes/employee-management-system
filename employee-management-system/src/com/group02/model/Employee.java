@@ -3,7 +3,6 @@ package com.group02.model;
 public class Employee {
     private int empID;
     private String employeeName;
-    private String SSN;
     private String jobTitle;
     private String division;
     private double salary;
@@ -12,19 +11,17 @@ public class Employee {
     public Employee() {
     }
 
-    public Employee(String employeeName, String SSN, String jobTitle, String division, double salary, String payInfo) {
+    public Employee(String employeeName, String jobTitle, String division, double salary, String payInfo) {
         this.employeeName = employeeName;
-        this.SSN = SSN;
         this.jobTitle = jobTitle;
         this.division = division;
         this.salary = salary;
         this.payInfo = payInfo;
     }
 
-    public Employee(int empID, String employeeName, String SSN) {
+    public Employee(int empID, String employeeName) {
         this.empID = empID;
         this.employeeName = employeeName;
-        this.SSN = SSN;
     }
 
     public String getInfo() {
@@ -40,7 +37,6 @@ public class Employee {
     public String toString() {
         return "Employee ID: " + empID + "\n" +
                 "Employee Name: " + employeeName + "\n" +
-                "SSN: " + SSN + "\n" +
                 "Job Title: " + jobTitle + "\n" +
                 "Division: " + division + "\n" +
                 "Salary: " + salary + "\n" +
@@ -62,14 +58,6 @@ public class Employee {
 
     public void setName(String employeeName) {
         this.employeeName = employeeName;
-    }
-
-    public String getSSN() {
-        return SSN;
-    }
-
-    public void setSSN(String SSN) {
-        this.SSN = SSN;
     }
 
     public String getJobTitle() {
@@ -100,7 +88,12 @@ public class Employee {
         return payInfo;
     }
 
-    public void setPayInfo(String payInfo) {
-        this.payInfo = payInfo;
+    public Boolean setPayInfo(String payInfo) {
+        if (payInfo.equals("FULLTIME") || payInfo.equals("PARTTIME")) {
+            this.payInfo = payInfo;
+            return true;
+        } else {
+            return false;
+        }
     }
 }

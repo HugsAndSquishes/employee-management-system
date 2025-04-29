@@ -26,18 +26,18 @@ public class EmployeeManager implements Searchable, Updatable {
      * @return generated empID (>0) or -1 on failure
      */
     public int addEmployee(Employee employee) {
-        String sql = "INSERT INTO employees (employeeName, division, SSN, jobTitle, salary, payInfo) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO employees (employeeName, division, jobTitle, salary, payInfo) " +
+                "VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             // bind parameters in the same order as the INSERT columns
             stmt.setString(1, employee.getName());
             stmt.setString(2, employee.getDivision());
-            stmt.setString(3, employee.getSSN());
-            stmt.setString(4, employee.getJobTitle());
-            stmt.setDouble(5, employee.getSalary());
-            stmt.setString(6, employee.getPayInfo());
+            // stmt.setString(3, employee.getSSN());
+            stmt.setString(3, employee.getJobTitle());
+            stmt.setDouble(4, employee.getSalary());
+            stmt.setString(5, employee.getPayInfo());
 
             int affectedRows = stmt.executeUpdate();
             if (affectedRows == 0) {
@@ -72,7 +72,7 @@ public class EmployeeManager implements Searchable, Updatable {
         Employee e = new Employee();
         e.setEmpID(rs.getInt("empID"));
         e.setName(rs.getString("employeeName"));
-        e.setSSN(rs.getString("SSN"));
+        // e.setSSN(rs.getString("SSN"));
         e.setJobTitle(rs.getString("jobTitle"));
         e.setDivision(rs.getString("division"));
         e.setSalary(rs.getDouble("salary"));
@@ -115,23 +115,25 @@ public class EmployeeManager implements Searchable, Updatable {
         return Optional.empty();
     }
 
-    /** {@inheritDoc} */
-    public Optional<Employee> searchBySSN(String SSN) {
-        String sql = "SELECT * FROM employees WHERE SSN = ?";
-        try (Connection conn = DatabaseUtil.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, SSN);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapResultSetToEmployee(rs));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return Optional.empty();
-    }
+    /*
+     * 
+     * public Optional<Employee> searchBySSN(String SSN) {
+     * String sql = "SELECT * FROM employees WHERE SSN = ?";
+     * try (Connection conn = DatabaseUtil.getConnection();
+     * PreparedStatement stmt = conn.prepareStatement(sql)) {
+     * 
+     * stmt.setString(1, SSN);
+     * try (ResultSet rs = stmt.executeQuery()) {
+     * if (rs.next()) {
+     * return Optional.of(mapResultSetToEmployee(rs));
+     * }
+     * }
+     * } catch (SQLException e) {
+     * e.printStackTrace();
+     * }
+     * return Optional.empty();
+     * }
+     */
 
     /** {@inheritDoc} */
     public List<Employee> searchByName(String namePattern) {
@@ -159,17 +161,17 @@ public class EmployeeManager implements Searchable, Updatable {
      * @return true if update affected ≥1 row
      */
     public boolean updateEmployee(Employee employee) {
-        String sql = "UPDATE employees SET employeeName=?, division=?, SSN=?, jobTitle=?, salary=?, payInfo=? WHERE empID=?";
+        String sql = "UPDATE employees SET employeeName=?, division=?, jobTitle=?, salary=?, payInfo=? WHERE empID=?";
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, employee.getName());
             stmt.setString(2, employee.getDivision());
-            stmt.setString(3, employee.getSSN());
-            stmt.setString(4, employee.getJobTitle());
-            stmt.setDouble(5, employee.getSalary());
-            stmt.setString(6, employee.getPayInfo());
-            stmt.setInt(7, employee.getEmpID());
+            stmt.setString(3, employee.getJobTitle());
+            stmt.setDouble(4, employee.getSalary());
+            stmt.setString(5, employee.getPayInfo());
+
+            stmt.setInt(6, employee.getEmpID());
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -180,11 +182,16 @@ public class EmployeeManager implements Searchable, Updatable {
 
     /** {@inheritDoc} */
     public boolean updateField(int empID, String fieldName, Object fieldValue) {
-        // Validate allowed columns
-        List<String> validFields = List.of("employeeName", "division", "SSN", "jobTitle", "salary", "payInfo");
+        // Check if this is a standard field
+        List<String> validFields = List.of("employeeName", "division", "jobTitle", "salary", "payInfo");
+
+        // Skip validation for non-standard fields (assume they're dynamic fields)
+        // This allows dynamic fields to pass through
         if (!validFields.contains(fieldName)) {
-            throw new IllegalArgumentException("Invalid field: " + fieldName);
+            // Instead of throwing an exception, just log and continue
+            System.out.println("Updating dynamic field: " + fieldName);
         }
+
         String sql = "UPDATE employees SET " + fieldName + " = ? WHERE empID = ?";
         try (Connection conn = DatabaseUtil.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {

@@ -9,5 +9,5 @@ I want to note that I use Optional<T> alot to avoid null errors
    - config.properties
    - test_config.properties
 
-2. In the terminal, type
+2. In the terminal, run
    ./build.sh all

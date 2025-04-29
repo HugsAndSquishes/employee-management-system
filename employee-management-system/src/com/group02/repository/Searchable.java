@@ -25,12 +25,4 @@ public interface Searchable {
      *         List object because multiple employees can have the same name
      */
     List<Employee> searchByName(String name);
-
-    /**
-     * Search for an employee by their SSN
-     * 
-     * @param ssn The SSN to search for
-     * @return Optional containing the employee if found
-     */
-    Optional<Employee> searchBySSN(String ssn);
 }

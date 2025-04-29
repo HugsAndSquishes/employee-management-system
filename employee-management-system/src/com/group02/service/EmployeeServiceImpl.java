@@ -84,14 +84,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Employee> searchBySSN(String ssn) {
-        return cache.stream()
-                .filter(e -> e.getSSN().equals(ssn))
-                .findFirst();
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public void applySalaryRaise(double minSalary, double maxSalary, double raisePercent) {
         dao.applySalaryRaise(minSalary, maxSalary, raisePercent);
         // update cached objects as well

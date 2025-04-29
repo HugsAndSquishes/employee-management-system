@@ -17,8 +17,6 @@ public interface EmployeeService {
 
     List<Employee> searchByName(String pattern);
 
-    Optional<Employee> searchBySSN(String ssn);
-
     void applySalaryRaise(double minSalary, double maxSalary, double raisePercent);
 
     Boolean addColumnToTable(String columnName, String columnType, Object defaultValue);

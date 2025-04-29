@@ -72,7 +72,7 @@ public class AppTest {
 
     @Test
     public void testCreateEmployee() {
-        Employee employee = new Employee("Jane Smith", "987654321", "Manager", "HR", 80000, "FullTime");
+        Employee employee = new Employee("Jane Smith", "Manager", "HR", 80000, "FullTime");
         int generatedId = employeeManager.addEmployee(employee);
 
         System.out.println("Expected EmpID: >0");
@@ -91,7 +91,7 @@ public class AppTest {
     @Test
     public void testUpdateEmployee() {
         // First create a new employee
-        Employee employee = new Employee("Update Test", "111222333", "Analyst", "Finance", 60000, "PartTime");
+        Employee employee = new Employee("Update Test", "Analyst", "Finance", 60000, "PARTTIME");
         int empID = employeeManager.addEmployee(employee);
 
         // Update their job title
@@ -112,7 +112,7 @@ public class AppTest {
     @Test
     public void testDeleteEmployee() {
         // Create an employee
-        Employee employee = new Employee("Delete Test", "222333444", "Temp", "IT", 50000, "Contract");
+        Employee employee = new Employee("Delete Test", "Temp", "IT", 50000, "FULLTIME");
         int empID = employeeManager.addEmployee(employee);
 
         // Delete the employee

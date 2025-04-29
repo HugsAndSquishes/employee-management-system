@@ -2,7 +2,7 @@ package com.group02;
 
 import com.group02.model.Employee;
 import com.group02.repository.EmployeeManager;
-import com.group02.service.EmployeeServiceImpl;
+import com.group02.service.DynamicEmployeeServiceImpl;
 import com.group02.ui.ConsoleUI;
 import com.group02.config.DatabaseConfig;
 
@@ -12,7 +12,6 @@ import java.util.Scanner;
 
 public class App {
     private static final Scanner scanner = new Scanner(System.in);
-    private static final EmployeeManager employeeManager = new EmployeeManager();
 
     public static void main(String[] args) {
         try {
@@ -26,7 +25,11 @@ public class App {
             System.exit(1); // Exit if we can't connect to the database
         }
 
-        new ConsoleUI(new EmployeeServiceImpl()).run();
+        // Create our dynamic service implementation instead of standard one
+        DynamicEmployeeServiceImpl dynamicService = new DynamicEmployeeServiceImpl();
+
+        // Pass the dynamic service to the ConsoleUI
+        new ConsoleUI(dynamicService).run();
 
         DatabaseConfig.closeConnection();
     }

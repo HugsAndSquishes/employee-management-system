@@ -99,11 +99,14 @@ public class DatabaseConfig {
             String createTableSQL = "CREATE TABLE IF NOT EXISTS employees (" +
                     "empID INT NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
                     "employeeName VARCHAR(255), " +
-                    "SSN VARCHAR(9) NOT NULL UNIQUE, " +
+                    // "SSN VARCHAR(9) NOT NULL UNIQUE, " + // SSN: 9 characters, unique
                     "jobTitle VARCHAR(255), " +
                     "division VARCHAR(255), " +
                     "salary DECIMAL(10,2), " +
-                    "payInfo VARCHAR(255)" +
+                    "payInfo VARCHAR(8) NOT NULL, " + // Only 'FULLTIME' or 'PARTTIME'
+                    // "CONSTRAINT chk_ssn_length CHECK (CHAR_LENGTH(SSN) = 9), " + // SSN length
+                    // check
+                    "CONSTRAINT chk_payinfo CHECK (UPPER(payInfo) IN ('FULLTIME', 'PARTTIME'))" + // Pay info check
                     ")";
             stmt.executeUpdate(createTableSQL);
 
